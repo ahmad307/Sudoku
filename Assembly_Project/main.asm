@@ -2,7 +2,7 @@ INCLUDE Irvine32.inc
 
 .data
 
-board 81 DUP(?) ;sudoko board
+board Byte 81 DUP(?) ;sudoko board
 xCor Byte ? ;x coordinate
 yCor Byte ? ;y coordinate
 num Byte ?  ;user number to update
@@ -84,6 +84,7 @@ EditCell PROC
 
 	ret
 EditCell ENDP
+
 main PROC
 	
     call dumpregs
