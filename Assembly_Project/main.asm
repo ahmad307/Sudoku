@@ -1,5 +1,10 @@
 INCLUDE Irvine32.inc
 
+;islam : getValue,editCell
+;ahmad : getBoard,checkIndex,checkAnswer
+;Hadil : readArray,takeInput
+;Raamyy: checkAvailble,getDifficulty,printArr
+
 .data
 
 board Byte 81 DUP(?) ;sudoko board
