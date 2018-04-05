@@ -27,7 +27,7 @@ ReadArray PROC
 	ret
 ReadArray ENDP
 
-;Check index not out of range
+;Check index not out of range / not reserved
 ;param x
 ;param y
 ;ret Eax 0, 1
