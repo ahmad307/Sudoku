@@ -52,7 +52,25 @@ CheckAnswer ENDP
 ;param y
 ;return Eax = value
 GetValue PROC
-	
+	CALL CheckIndex
+	PUSH Edx
+	PUSH Ecx
+	CMP Eax, 1
+	Je Body
+		Mov Eax, -1
+		POP Edx
+		ret
+	Body:
+		Mov Eax, 9
+		Movzx Ecx, xCor
+		Mul Ecx
+		Movzx Ecx, yCor
+		Add Eax, Ecx
+		Mov Edx, offset board
+		Add Edx, Eax
+		Mov Eax, [Edx]
+	POP Ecx
+	POP Edx
 	ret
 GetValue ENDP
 
@@ -86,7 +104,22 @@ GetDifficulty ENDP
 ;param y
 ;param num
 EditCell PROC
-
+	CALL CheckIndex
+	CMP Eax, 0
+	JE Ending
+		CALL CheckAnswer
+		CMP Eax, 0
+	JE Ending
+		Mov Eax, 9
+		Movzx Ecx, xCor
+		Mul Ecx
+		Movzx Ecx, yCor
+		Add Eax, Ecx
+		Mov Edx, offset board
+		Add Edx, Eax
+		Movzx Eax, num
+		Mov [Edx], Eax
+	Ending:
 	ret
 EditCell ENDP
 
