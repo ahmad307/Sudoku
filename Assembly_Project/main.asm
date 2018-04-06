@@ -16,7 +16,7 @@ fileName Byte 10 Dup(?), 0
 wrongCounter Byte ?
 correctCounter Byte ?
 remainingCounter Byte ?
-
+DifficultyMessage Byte "Please Enter the difficulty",0
 .code
 
 ;Read the array from the file
@@ -30,7 +30,7 @@ ReadArray ENDP
 ;Check index not out of range / not reserved
 ;param x
 ;param y
-;ret Eax 0, 1
+;ret Eax 0, 1 
 CheckIndex PROC
 
 	ret
@@ -83,9 +83,29 @@ GetBoard ENDP
 
 ;param Edx offset of array
 PrintArray PROC
+mov Ecx,81
+	l1:
+		mov Eax,0
+		movzx Eax,byte ptr [Edx]  ;Eax contains current number
+		push Eax
+		push Edx
+		mov dx,0
+		mov ax,cx     ;dx = cx % 9
+ 		mov bx,9
+		div bx
 
+		cmp dx,0
+		jne NoEndl	  ;if dx % 9 = 0 print endl
+		call crlf
+		NoEndl:
+		pop Edx
+		pop Eax
+
+		call writeDec
+		inc Edx
+	loop l1
 	ret
-PrintArray ENDP
+	PrintArray ENDP
 
 ;Update Global varialble x, y, num
 TakeInput PROC
@@ -96,6 +116,13 @@ TakeInput ENDP
 ;Update Global variable Difficulty 
 GetDifficulty PROC
 
+	mov Edx,offset DifficultyMessage
+	call WriteString
+	call crlf
+
+	call ReadDec
+	mov difficulty,al ;take the byte from eax
+	
 	ret
 GetDifficulty ENDP
 
