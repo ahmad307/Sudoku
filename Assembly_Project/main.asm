@@ -104,6 +104,7 @@ mov Ecx,81
 		call writeDec
 		inc Edx
 	loop l1
+	call crlf
 	ret
 	PrintArray ENDP
 
