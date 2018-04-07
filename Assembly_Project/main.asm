@@ -111,6 +111,32 @@ mov Ecx,81
 ;Update Global varialble x, y, num
 TakeInput PROC
 
+again:
+
+mWrite "Enter the x coordinate :  " 
+call WriteWindowsMsg
+call ReadDec
+mov xCor,eax
+
+mWrite "Enter the y coordinate :  " 
+call WriteWindowsMsg
+call ReadDec
+mov yCor,eax
+
+mWrite "Enter the number :  " 
+call WriteWindowsMsg
+call ReadDec
+mov num,eax
+
+call CheckIndex
+cmp eax ,1
+je done
+
+mWrite "There is an error in your input values... Please reenter them. " 
+jmp again
+
+done:
+
 	ret
 TakeInput ENDP
 
