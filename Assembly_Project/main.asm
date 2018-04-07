@@ -4,13 +4,14 @@ INCLUDE macros.inc
 BUFFER_SIZE=5000
 
 ;islam : getValue,editCell
-;ahmad : getBoard,checkIndex,checkAnswer
+;ahmad : getBoard,checkIndex,checkAnswer,IsEditable
 ;Hadil : readArray,takeInput
 ;Raamyy: checkAvailble,getDifficulty,printArr
 
 .data
 
 board Byte 81 DUP(?)    ;sudoko board
+solvedBoard Byte 81 DUP(?)	;sudoku solved board
 xCor Byte ?		;x coordinate
 yCor Byte ?     ;y coordinate
 num Byte ?    ;user number to update
@@ -164,7 +165,7 @@ CheckAnswer PROC
 	ret
 CheckAnswer ENDP
 
-;Return value in the index
+;Returns the value in the given index
 ;Param Edx pointer to the array
 ;param x
 ;param y
@@ -328,6 +329,31 @@ EditCell PROC
 	Ending:
 	ret
 EditCell ENDP
+
+
+;Checks if cell at x,y (global vars) in board is editable
+;Returns: 1 in EAX if the place is editable and 0 otherwise
+IsEditable PROC
+	mov edx,offset board
+	call GetValue
+
+	;Checking value returned from GetValue
+	cmp eax,0
+	je RIGHT
+	jmp WRONG
+
+	RIGHT:
+	mov eax,1
+	jmp SKIP
+
+	WRONG:
+	mov eax,0
+
+	SKIP:
+	ret
+IsEditable ENDP
+
+
 
 main PROC
 	
