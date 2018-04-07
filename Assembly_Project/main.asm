@@ -10,18 +10,29 @@ BUFFER_SIZE=5000
 
 .data
 
-board Byte 81 DUP(?)    ;sudoko board
-solvedBoard Byte 81 DUP(?)	;sudoku solved board
-xCor Byte ?		;x coordinate
-yCor Byte ?     ;y coordinate
-num Byte ?    ;user number to update
-difficulty Byte ?	;1 Easy, 2 Medium, 3 Hard
+;Sudoko board
+board Byte 81 DUP(?)    
+
+;Solved Sudoku board
+solvedBoard Byte 81 DUP(?)	
+
+;X coordinate
+xCor Byte ?		
+;Y coordinate
+yCor Byte ?     
+;User input value
+num Byte ?   
+
 wrongCounter Byte ?
 correctCounter Byte ?
 remainingCounter Byte ?
+
 buffer BYTE BUFFER_SIZE DUP(?)
 fileHandle HANDLE ?
+
+difficulty Byte ?	;1 Easy, 2 Medium, 3 Hard
 difficultyMessage Byte "Please Enter the difficulty",0
+
 fileName Byte "sudoku_boards/diff_?_?.txt",0
 solvedFileName Byte "sudoku_boards/diff_?_?_solved.txt",0
 
@@ -32,7 +43,7 @@ solvedFileName Byte "sudoku_boards/diff_?_?_solved.txt",0
 ;param: Edx offset of the array
 ;param: Ebx offset of string file name
 ReadArray PROC
-	; Let user input a filename.
+	;Prompts user to enter a filename.
 	;27 is constant size for filename
 	mov ecx,27
 	; Open the file for input.
@@ -165,6 +176,8 @@ CheckAnswer PROC
 	ret
 CheckAnswer ENDP
 
+
+
 ;Returns the value in the given index
 ;Param Edx pointer to the array
 ;param x
@@ -292,6 +305,8 @@ TakeInput PROC
 	ret
 TakeInput ENDP
 
+
+
 ;Update Global variable Difficulty 
 GetDifficulty PROC
 
@@ -329,6 +344,7 @@ EditCell PROC
 	Ending:
 	ret
 EditCell ENDP
+
 
 
 ;Checks if cell at x,y (global vars) in board is editable
