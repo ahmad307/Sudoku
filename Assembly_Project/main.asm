@@ -1,10 +1,12 @@
 
-;islam : GetValue,EditCell
-;ahmad : GetBoard,CheckIndex,CheckAnswer
-;Hadil : ReadArray,TakeInput
-;Raamyy: CheckAvailble,GetDifficulty,PrintArr
-
 INCLUDE Irvine32.inc
+INCLUDE macros.inc
+BUFFER_SIZE=5000
+
+;islam : getValue,editCell
+;ahmad : getBoard,checkIndex,checkAnswer
+;Hadil : readArray,takeInput
+;Raamyy: checkAvailble,getDifficulty,printArr
 
 .data
 
@@ -17,6 +19,8 @@ fileName Byte 10 Dup(?), 0
 wrongCounter Byte ?
 correctCounter Byte ?
 remainingCounter Byte ?
+buffer BYTE BUFFER_SIZE DUP(?)
+fileHandle HANDLE ?
 difficultyMessage Byte "Please Enter the difficulty",0
 fileName Byte "sudoku_boards/diff_?_?.txt",0
 solvedFileName Byte "sudoku_boards/diff_?_?_solved.txt",0
@@ -28,6 +32,89 @@ solvedFileName Byte "sudoku_boards/diff_?_?_solved.txt",0
 ;param: Edx offset of the array
 ;param: Ebx offset of string file name
 ReadArray PROC
+; Let user input a filename.
+;27 is constant size for filename
+mov ecx,27
+; Open the file for input.
+
+mov edx,ebx
+call OpenInputFile
+mov fileHandle, eax
+
+; Check for errors.
+cmp eax, INVALID_HANDLE_VALUE; error opening file ?
+jne file_ok; no: skip
+mWrite <"Cannot open file", 0dh, 0ah>
+jmp quit; and quit
+
+file_ok :
+; Read the file into a buffer.
+mov edx, OFFSET buffer
+mov ecx, BUFFER_SIZE
+call ReadFromFile
+jnc check_buffer_size; error reading ?
+mWrite "Error reading file. "; yes: show error message
+call WriteWindowsMsg
+jmp close_file
+
+check_buffer_size :
+cmp eax, BUFFER_SIZE; buffer large enough ?
+jb buf_size_ok; yes
+mWrite <"Error: Buffer too small for the file", 0dh, 0ah>
+jmp quit; and quit
+
+buf_size_ok :
+mov buffer[eax], 0; insert null terminator
+;mWrite "File size: "
+;call WriteDec; display file size
+;call Crlf
+
+mov edx, OFFSET buffer; display the buffer
+mov esi, edx
+
+mov ecx, 97
+mov edx, offset board
+
+l :
+  mov al, [esi]
+  inc esi
+  cmp al, 13
+  je line
+  cmp al, 10
+  je line
+  mov[edx], al
+  inc edx
+
+  line :
+loop l
+
+
+   mov esi, offset board
+   mov ecx, 81
+   mov eax, 0
+l1:
+
+  mov al, [esi]
+  add esi, 1
+
+loop l1
+
+mov esi, offset  board
+mov ecx, 81
+l2:
+
+   sub byte ptr[esi],48
+   inc esi 
+
+loop l2
+
+mov edx,offset board
+
+close_file :
+mov eax, fileHandle
+call CloseFile
+
+quit :
 
 	ret
 ReadArray ENDP
@@ -139,6 +226,32 @@ mov Ecx,81
 
 ;Update Global varialble x, y, num
 TakeInput PROC
+
+again:
+
+mWrite "Enter the x coordinate :  " 
+call WriteWindowsMsg
+call ReadDec
+mov xCor,al
+
+mWrite "Enter the y coordinate :  " 
+call WriteWindowsMsg
+call ReadDec
+mov yCor,al
+
+mWrite "Enter the number :  " 
+call WriteWindowsMsg
+call ReadDec
+mov num,al
+
+call CheckIndex
+cmp eax ,1
+je done
+
+mWrite "There is an error in your input values... Please reenter them. " 
+jmp again
+
+done:
 
 	ret
 TakeInput ENDP
