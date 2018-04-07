@@ -203,11 +203,20 @@ GetBoard PROC
 	;Getting the value modulu 3
 	mov cx,ax
 	mov dx,0
-	mov bx,3
-	div bx		;BX carries a random value less than 3
+	mov bx,4
+	div bx		;DX carries a random value less than 4
 
-	;Customizing fileName string with difficulty and random choice
-	mov al,bl
+	;Setting value to 1 if it's 0
+	cmp dx,0
+	je ZeroDX
+	jmp cont
+
+	ZeroDX:
+	mov dx,1
+
+	cont:
+	;Customizing fileName string with random choice and difficulty
+	mov al,dl
 	mov fileName[21],al
 
 	mov al,difficulty
