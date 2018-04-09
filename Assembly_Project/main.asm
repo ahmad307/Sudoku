@@ -4,7 +4,7 @@ INCLUDE macros.inc
 BUFFER_SIZE=5000
 
 ;islam : getValue,editCell
-;ahmad : getBoard,checkIndex,checkAnswer,IsEditable
+;ahmad : getBoards,checkIndex,checkAnswer,IsEditable
 ;Hadil : readArray,takeInput
 ;Raamyy: checkAvailble,getDifficulty,printArr
 
@@ -42,12 +42,16 @@ solvedFileName Byte "sudoku_boards/diff_?_?_solved.txt",0
 ;Reads the array from the file
 ;param: Edx offset of the array
 ;param: Ebx offset of string file name
+;Returns: Array read from file in Edx
+
+;;;String size should be dynamic;;;
+;;;;The array passed in EDX is the one to be edited;;;;
 ReadArray PROC
 	;Prompts user to enter a filename.
 	;27 is constant size for filename
-	mov ecx,27
-	; Open the file for input.
+	mov ecx,27						
 
+	; Open the file for input.
 	mov edx,ebx
 	call OpenInputFile
 	mov fileHandle, eax
@@ -210,7 +214,7 @@ GetValue ENDP
 
 ;Param:	 Difficulty (global var)
 ;Returns: Desired board in board var
-GetBoard PROC
+GetBoards PROC
 	;Generating random value from ax and cx
 	xor ax,cx
 
@@ -229,20 +233,32 @@ GetBoard PROC
 	mov dx,1
 
 	cont:
-	;Customizing fileName string with random choice and difficulty
+	;Customizing fileName variables string with random choice and difficulty
 	mov al,dl
 	mov fileName[21],al
 
 	mov al,difficulty
 	mov fileName[19],al
 
+	mov al,dl
+	mov solvedFileName[21],al
+
+	mov al,difficulty
+	mov solvedFileName[19],al
+
 	;Calling ReadArray with required params to populate board var
 	mov edx,offset board
 	mov ebx,offset fileName
 	call ReadArray
 
+	;Calling ReadArray with required params to populate solvedBoard var
+	mov edx,offset solvedBoard
+	mov ebx,offset solvedFileName
+	call ReadArray
+
+
 	ret
-GetBoard ENDP
+GetBoards ENDP
 
 
 
@@ -314,7 +330,8 @@ GetDifficulty PROC
 	call WriteString
 	call crlf
 
-	;Better use ReadChar for GetBoard Proc;
+	;;;;Better use ReadChar for GetBoards Proc;;;;
+
 	call ReadDec
 	mov difficulty,al ;take the byte from eax
 	
@@ -373,6 +390,14 @@ IsEditable ENDP
 
 main PROC
 	
+	;Fetch Sudoku Boards
+	call GetDifficulty
+	call GetBoards
+
+	;Print Sudoku board
+	mov Edx,offset board
+	call PrintArray 
+
     call dumpregs
 
 	exit
