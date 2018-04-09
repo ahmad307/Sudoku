@@ -235,15 +235,19 @@ GetBoards PROC
 	cont:
 	;Customizing fileName variables string with random choice and difficulty
 	mov al,dl
+	add al,'0'
 	mov fileName[21],al
 
 	mov al,difficulty
+	add al,'0'
 	mov fileName[19],al
 
 	mov al,dl
+	add al,'0'
 	mov solvedFileName[21],al
 
 	mov al,difficulty
+	add al,'0'
 	mov solvedFileName[19],al
 
 	;Calling ReadArray with required params to populate board var
@@ -255,7 +259,6 @@ GetBoards PROC
 	mov edx,offset solvedBoard
 	mov ebx,offset solvedFileName
 	call ReadArray
-
 
 	ret
 GetBoards ENDP
