@@ -31,7 +31,6 @@ buffer BYTE BUFFER_SIZE DUP(?)
 fileHandle HANDLE ?
 
 difficulty Byte ?	;1 Easy, 2 Medium, 3 Hard
-difficultyMessage Byte "Please Enter the difficulty",0
 
 fileName Byte "sudoku_boards/diff_?_?.txt",0
 solvedFileName Byte "sudoku_boards/diff_?_?_solved.txt",0
@@ -153,6 +152,7 @@ CheckIndex PROC
 
 	WRONG:
 		mov eax,0
+		ret							
 	RIGHT:
 	mov eax,1
 
@@ -289,17 +289,14 @@ TakeInput PROC
 	again:
 
 	mWrite "Enter the x coordinate :  " 
-	call WriteWindowsMsg
 	call ReadDec
 	mov xCor,al
 
 	mWrite "Enter the y coordinate :  " 
-	call WriteWindowsMsg
 	call ReadDec
 	mov yCor,al
 
 	mWrite "Enter the number :  " 
-	call WriteWindowsMsg
 	call ReadDec
 	mov num,al
 
@@ -312,6 +309,17 @@ TakeInput PROC
 
 	done:
 
+	call iseditable
+	cmp eax,1
+	je Editable
+
+	mWrite "You Cannot edit this place, Please change it."
+	call crlf
+	jmp again
+
+	Editable:
+	mWrite "Edited"
+	call crlf
 	ret
 TakeInput ENDP
 
@@ -319,14 +327,23 @@ TakeInput ENDP
 
 ;Update Global variable Difficulty 
 GetDifficulty PROC
-
-	mov Edx,offset DifficultyMessage
-	call WriteString
+	again:
+	mWrite "Please Enter the difficulty: "
 	call crlf
 
 	;;;;Better use ReadChar for GetBoards Proc;;;;
 
 	call ReadDec
+	cmp al,1
+	je NoError
+	cmp al,2
+	je NoError
+	cmp al,3
+	je NoError
+	mWrite "Please enter a valid difficulty ( 1 or 2 or 3 ) "
+	call crlf
+	jmp again
+	NoError:
 	mov difficulty,al ;take the byte from eax
 	
 	ret
@@ -391,6 +408,19 @@ main PROC
 	;Print Sudoku board
 	mov Edx,offset board
 	call PrintArray 
+	
+	mov ecx,10
+	GamePlay:
+	call takeinput
+	call iseditable
+	call checkanswer
+	call editcell
+	mWrite "New sudoko iss "
+	loop GamePlay
+
+
+
+
 
     call dumpregs
 
