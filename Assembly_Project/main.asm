@@ -393,7 +393,7 @@ main PROC
 	call PrintArray 
 
     call dumpregs
-
+			mWrite "Error reading file. "	
 	exit
 main ENDP
 
