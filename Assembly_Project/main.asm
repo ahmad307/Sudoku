@@ -445,8 +445,6 @@ main PROC
 	
 	call UpdateRemainingCounter
 	Movzx Eax, RemainingCounter
-	call writedec
-	call crlf
 
 	GamePlay:
 		call takeinput
