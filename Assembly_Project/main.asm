@@ -44,86 +44,76 @@ solvedFileName Byte "sudoku_boards/diff_?_?_solved.txt",0
 ;param: Ebx offset of string file name
 ;Returns: Array read from file in Edx
 
-;;;String size should be dynamic;;;
-;;;;The array passed in EDX is the one to be edited;;;;
 ReadArray PROC
-	;Prompts user to enter a filename.
-	;27 is constant size for filename
-	mov ecx,27						
+	;Setting ECX with the max string size
+	mov ecx,34
 
-	; Open the file for input.
+	;Open the file for input
 	mov edx,ebx
 	call OpenInputFile
 	mov fileHandle, eax
 
-	; Check for errors.
-	cmp eax, INVALID_HANDLE_VALUE; error opening file ?
-	jne file_ok; no: skip
+	;Check for reading from file errors
+	cmp eax, INVALID_HANDLE_VALUE	
+	jne file_ok	
 	mWrite <"Cannot open file", 0dh, 0ah>
-	jmp quit; and quit
+	jmp quit
 
 	file_ok :
-	; Read the file into a buffer.
-	mov edx, OFFSET buffer
-	mov ecx, BUFFER_SIZE
-	call ReadFromFile
-	jnc check_buffer_size; error reading ?
-	mWrite "Error reading file. "; yes: show error message
-	call WriteWindowsMsg
-	jmp close_file
+		; Read the file into a buffer
+		mov edx, OFFSET buffer
+		mov ecx, BUFFER_SIZE
+		call ReadFromFile
+		jnc check_buffer_size	;error reading ?
+		mWrite "Error reading file. "	
+		call WriteWindowsMsg
+		jmp close_file
 
 	check_buffer_size :
-	cmp eax, BUFFER_SIZE; buffer large enough ?
-	jb buf_size_ok; yes
-	mWrite <"Error: Buffer too small for the file", 0dh, 0ah>
-	jmp quit; and quit
+		;Check if buffer is large enough
+		cmp eax, BUFFER_SIZE	
+		jb buf_size_ok
+		mWrite <"Error: Buffer too small for the file", 0dh, 0ah>
+		jmp quit
 
 	buf_size_ok :
-	mov buffer[eax], 0; insert null terminator
-	;mWrite "File size: "
-	;call WriteDec; display file size
-	;call Crlf
+		;Insert null terminator
+		mov buffer[eax], 0
 
-	mov edx, OFFSET buffer; display the buffer
-	mov esi, edx
-
+	mov ebx, OFFSET buffer
 	mov ecx, 97
-	mov edx, offset board
+	mov edx,esi
 
 	l :
-	  mov al, [esi]
-	  inc esi
+	  mov al, [ebx]
+	  inc ebx
 	  cmp al, 13
 	  je line
 	  cmp al, 10
 	  je line
-	  mov[edx], al
-	  inc edx
-
-	  line :
+	  mov [esi], al
+	  inc esi
+	  line : 
 	loop l
 
+	mov esi, edx
+	mov ecx, 81
+	mov eax, 0
 
-	   mov esi, offset board
-	   mov ecx, 81
-	   mov eax, 0
 	l1:
-
 	  mov al, [esi]
 	  add esi, 1
-
 	loop l1
 
-	mov esi, offset  board
+	mov esi, edx
 	mov ecx, 81
-	l2:
 
+	l2:
 	   sub byte ptr[esi],48
 	   inc esi 
-
 	loop l2
 
-	mov edx,offset board
+	 mov esi, edx
 
 	close_file :
 	mov eax, fileHandle
@@ -133,6 +123,7 @@ ReadArray PROC
 
 	ret
 ReadArray ENDP
+
 
 
 
@@ -251,12 +242,12 @@ GetBoards PROC
 	mov solvedFileName[19],al
 
 	;Calling ReadArray with required params to populate board var
-	mov edx,offset board
+	mov esi,offset board
 	mov ebx,offset fileName
 	call ReadArray
 
 	;Calling ReadArray with required params to populate solvedBoard var
-	mov edx,offset solvedBoard
+	mov esi,offset solvedBoard
 	mov ebx,offset solvedFileName
 	call ReadArray
 
