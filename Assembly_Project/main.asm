@@ -383,12 +383,12 @@ EditCell PROC
 		Mov [Edx], al
 		Inc xCor
 		Inc yCor
+		Dec remainingCounter
 	Ending:
 		POP Ecx
 		pop Edx
 		ret
 EditCell ENDP
-
 
 
 ;Checks if cell at x,y (global vars) in board is editable
@@ -413,6 +413,26 @@ IsEditable PROC
 	ret
 IsEditable ENDP
 
+;Update number of remaining cells
+UpdateRemainingCounter PROC
+	PUSH Edx
+	PUSH Ecx
+		Mov RemainingCounter, 0
+		Mov Edx, offset Board
+		Mov Ecx, 81
+		L1:
+			Mov Al, [Edx]
+			CMP Al, 0
+			JNE skip
+				inc RemainingCounter
+			skip:
+				inc Edx
+		Loop L1
+	POP Ecx
+	POP Edx
+	ret
+UpdateRemainingCounter ENDP
+
 main PROC
 	
 	;Fetch Sudoku Boards
@@ -423,20 +443,27 @@ main PROC
 	mov Edx,offset board
 	call PrintArray 
 	
-	mov ecx,10
+	call UpdateRemainingCounter
+	Movzx Eax, RemainingCounter
+	call writedec
+	call crlf
+
 	GamePlay:
-	call takeinput
-	call iseditable
-	call checkanswer
-	call editcell
-	mWrite "New sudoko iss "
-	loop GamePlay
+		call takeinput
+		call iseditable
+		call checkanswer
+		call editcell
+		CMP RemainingCounter, 0
+		JE finish
+		call clrscr
+		mWrite "New sudoko iss \n"
+		call PrintArray
+	jmp GamePlay
 
-
-
-
-
-
+	finish:
+		call clrscr
+		mWrite "congratulations\n"
+		call crlf
 	exit
 main ENDP
 
