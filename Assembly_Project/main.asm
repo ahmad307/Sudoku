@@ -151,7 +151,8 @@ CheckIndex PROC
 	jmp RIGHT
 
 	WRONG:
-		mov eax,0
+		mov eax,0					 ;;;;BBUGGG, you should retur here
+		ret							 ;;;;Edited Bug
 	RIGHT:
 	mov eax,1
 
@@ -288,17 +289,17 @@ TakeInput PROC
 	again:
 
 	mWrite "Enter the x coordinate :  " 
-	call WriteWindowsMsg
+	;call WriteWindowsMsg
 	call ReadDec
 	mov xCor,al
 
 	mWrite "Enter the y coordinate :  " 
-	call WriteWindowsMsg
+	;call WriteWindowsMsg
 	call ReadDec
 	mov yCor,al
 
 	mWrite "Enter the number :  " 
-	call WriteWindowsMsg
+	;call WriteWindowsMsg
 	call ReadDec
 	mov num,al
 
@@ -400,6 +401,16 @@ main PROC
 	mov Edx,offset board
 	call PrintArray 
 	
+	mov ecx,10
+	GamePlay:
+	call takeinput
+	call iseditable
+	call checkanswer
+	call editcell
+	mWrite "New sudoko iss "
+	loop GamePlay
+
+
 
 
 
