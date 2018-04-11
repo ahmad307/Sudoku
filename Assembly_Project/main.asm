@@ -312,6 +312,17 @@ TakeInput PROC
 
 	done:
 
+	call iseditable
+	cmp eax,1
+	je Editable
+
+	mWrite "You Cannot edit this place, Please change it."
+	call crlf
+	jmp again
+
+	Editable:
+	mWrite "Edited"
+	call crlf
 	ret
 TakeInput ENDP
 
