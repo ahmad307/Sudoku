@@ -152,11 +152,10 @@ CheckIndex PROC
 
 	WRONG:
 		mov eax,0
-		ret							
+		ret
 	RIGHT:
-	mov eax,1
-
-	ret
+		mov eax,1
+		ret
 CheckIndex ENDP
 
 
@@ -167,7 +166,7 @@ CheckIndex ENDP
 ;param number
 ;ret Eax 0, 1
 CheckAnswer PROC
-
+	
 	ret
 CheckAnswer ENDP
 
@@ -180,22 +179,29 @@ CheckAnswer ENDP
 ;return Eax = value
 GetValue PROC
 	CALL CheckIndex
-	PUSH Edx
 	PUSH Ecx
+	PUSH Edx
 	CMP Eax, 1
 	Je Body
 		Mov Eax, -1
 		POP Edx
+		POP Ecx
 		ret
 	Body:
+		Dec xCor
+		Dec yCor
 		Mov Eax, 9
 		Movzx Ecx, xCor
 		Mul Ecx
 		Movzx Ecx, yCor
 		Add Eax, Ecx
-		Mov Edx, offset board
+		POP Edx
+		PUSH Edx
 		Add Edx, Eax
-		Mov Eax, [Edx]
+		Mov eax, 0
+		Mov al, [Edx]
+		Inc xCor
+		Inc yCor
 	POP Ecx
 	POP Edx
 	ret
@@ -258,7 +264,8 @@ GetBoards ENDP
 
 ;param Edx offset of array
 PrintArray PROC
-mov Ecx,81
+	PUSH Edx
+	mov Ecx,81
 	l1:
 		mov Eax,0
 		movzx Eax,byte ptr [Edx]  ;Eax contains current number
@@ -280,8 +287,9 @@ mov Ecx,81
 		inc Edx
 	loop l1
 	call crlf
+	POP Edx
 	ret
-	PrintArray ENDP
+PrintArray ENDP
 
 ;Update Global varialble x, y, num
 TakeInput PROC
@@ -354,12 +362,16 @@ GetDifficulty ENDP
 ;param y
 ;param num
 EditCell PROC
+	PUSH Edx
+	PUSH Ecx
 	CALL CheckIndex
 	CMP Eax, 0
 	JE Ending
 		CALL CheckAnswer
 		CMP Eax, 0
 	JE Ending
+		Dec xCor
+		Dec yCor
 		Mov Eax, 9
 		Movzx Ecx, xCor
 		Mul Ecx
@@ -367,10 +379,14 @@ EditCell PROC
 		Add Eax, Ecx
 		Mov Edx, offset board
 		Add Edx, Eax
-		Movzx Eax, num
-		Mov [Edx], Eax
+		Mov al, num
+		Mov [Edx], al
+		Inc xCor
+		Inc yCor
 	Ending:
-	ret
+		POP Ecx
+		pop Edx
+		ret
 EditCell ENDP
 
 
@@ -397,8 +413,6 @@ IsEditable PROC
 	ret
 IsEditable ENDP
 
-
-
 main PROC
 	
 	;Fetch Sudoku Boards
@@ -422,7 +436,6 @@ main PROC
 
 
 
-    call dumpregs
 
 	exit
 main ENDP
