@@ -151,8 +151,8 @@ CheckIndex PROC
 	jmp RIGHT
 
 	WRONG:
-		mov eax,0					 ;;;;BBUGGG, you should retur here
-		ret							 ;;;;Edited Bug
+		mov eax,0
+		ret							
 	RIGHT:
 	mov eax,1
 
@@ -289,17 +289,14 @@ TakeInput PROC
 	again:
 
 	mWrite "Enter the x coordinate :  " 
-	;call WriteWindowsMsg
 	call ReadDec
 	mov xCor,al
 
 	mWrite "Enter the y coordinate :  " 
-	;call WriteWindowsMsg
 	call ReadDec
 	mov yCor,al
 
 	mWrite "Enter the number :  " 
-	;call WriteWindowsMsg
 	call ReadDec
 	mov num,al
 
