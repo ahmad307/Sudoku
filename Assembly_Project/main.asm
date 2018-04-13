@@ -233,7 +233,6 @@ GetBoards PROC
 	xor ax,cx
 
 	;Getting the value modulu 3
-	mov cx,ax
 	mov dx,0
 	mov bx,4
 	div bx		;DX carries a random value less than 4
@@ -247,7 +246,7 @@ GetBoards PROC
 	mov dx,1
 
 	cont:
-	;Customizing fileName variables string with random choice and difficulty
+	;Customizing fileName string variables with random choice and difficulty
 	mov al,dl
 	add al,'0'
 	mov fileName[21],al
@@ -308,6 +307,8 @@ PrintArray PROC
 	ret
 PrintArray ENDP
 
+
+
 ;Update Global varialble x, y, num
 TakeInput PROC
 
@@ -356,8 +357,6 @@ GetDifficulty PROC
 	mWrite "Please Enter the difficulty: "
 	call crlf
 
-	;;;;Better use ReadChar for GetBoards Proc;;;;
-
 	call ReadDec
 	cmp al,1
 	je NoError
@@ -374,7 +373,7 @@ GetDifficulty PROC
 	ret
 GetDifficulty ENDP
 
-;Update cell
+;Updates cell's value in co-ordinate (x,y)
 ;param x
 ;param y
 ;param num
@@ -430,6 +429,8 @@ IsEditable PROC
 	ret
 IsEditable ENDP
 
+
+
 ;Update number of remaining cells
 UpdateRemainingCounter PROC
 	PUSH Edx
@@ -450,9 +451,11 @@ UpdateRemainingCounter PROC
 	ret
 UpdateRemainingCounter ENDP
 
+
+
 main PROC
 	
-	;Fetch Sudoku Boards
+	;Fetch Sudoku Boards from files
 	call GetDifficulty
 	call GetBoards
 
@@ -461,24 +464,27 @@ main PROC
 	call PrintArray 
 	
 	call UpdateRemainingCounter
-	Movzx Eax, RemainingCounter
+	Movzx Eax, remainingCounter
 
 	GamePlay:
-		call takeinput
-		call iseditable
-		call checkanswer
-		call editcell
-		CMP RemainingCounter, 0
+		call TakeInput
+		call IsEditable
+		call EditCell
+
+		CMP remainingCounter, 0
 		JE finish
+
 		call clrscr
-		mWrite "New sudoko iss \n"
+		mWrite "New Sudoko Board"
+		call crlf
 		call PrintArray
 	jmp GamePlay
 
 	finish:
 		call clrscr
-		mWrite "congratulations\n"
+		mWrite "Congratulations"
 		call crlf
+
 	exit
 main ENDP
 
