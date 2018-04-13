@@ -160,15 +160,32 @@ CheckIndex ENDP
 
 
 
-;Check if the answer in the index is correct
-;param x
-;param y
-;param number
-;ret Eax 0, 1
+;Checks if the answer in the given index is correct
+;Params: x, y, num
+;Returns: 1 in Eax if true, and 0 otherwise
 CheckAnswer PROC
-	
+	;Getting the answer value in AL
+	mov Edx,offset solvedBoard
+	call GetValue
+
+	;Moving the value to check to BL
+	mov bl,num
+
+	;Comparing the given value with the answer
+	cmp bl,al
+	je RIGHT
+	jmp WRONG
+
+	RIGHT:
+	mov Eax,1
+	ret
+
+	WRONG:
+	mov Eax,0
+
 	ret
 CheckAnswer ENDP
+
 
 
 
