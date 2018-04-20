@@ -4,7 +4,7 @@ INCLUDE macros.inc
 BUFFER_SIZE=5000
 
 ;islam : getValue,editCell
-;ahmad : getBoards,checkIndex,checkAnswer,IsEditable
+;ahmad : getBoards,checkIndex,checkAnswer,IsEditable,LoadLastGame
 ;Hadil : readArray,takeInput
 ;Raamyy: checkAvailble,getDifficulty,printArr
 
@@ -25,24 +25,27 @@ num Byte ?
 
 wrongCounter Byte ?
 correctCounter Byte ?
-remainingCounter Byte ?
+remainingCellsCount Byte ?
 
 buffer BYTE BUFFER_SIZE DUP(?)
 fileHandle HANDLE ?
 
 difficulty Byte ?	;1 Easy, 2 Medium, 3 Hard
 
+;Data files paths
 fileName Byte "sudoku_boards/diff_?_?.txt",0
 solvedFileName Byte "sudoku_boards/diff_?_?_solved.txt",0
+
+lastGameFile Byte "sudoku_boards/last_game/board.txt",0
+lastGameSolvedFile Byte "sudoku_boards/last_game/board_solved.txt",0
 
 
 .code
 
 ;Reads the array from the file
-;param: Edx offset of the array
+;param: Edx offset of the array to be filled
 ;param: Ebx offset of string file name
 ;Returns: Array read from file in Edx
-
 ReadArray PROC
 	;Setting ECX with the max string size
 	mov ecx,34
@@ -399,7 +402,7 @@ EditCell PROC
 		Mov [Edx], al
 		Inc xCor
 		Inc yCor
-		Dec remainingCounter
+		Dec remainingCellsCount
 	Ending:
 		POP Ecx
 		pop Edx
@@ -432,55 +435,124 @@ IsEditable ENDP
 
 
 ;Update number of remaining cells
-UpdateRemainingCounter PROC
+UpdateRemainingCellsCount PROC
 	PUSH Edx
 	PUSH Ecx
-		Mov RemainingCounter, 0
+		Mov remainingCellsCount, 0
 		Mov Edx, offset Board
 		Mov Ecx, 81
 		L1:
 			Mov Al, [Edx]
 			CMP Al, 0
 			JNE skip
-				inc RemainingCounter
+				inc remainingCellsCount
 			skip:
 				inc Edx
 		Loop L1
 	POP Ecx
 	POP Edx
 	ret
-UpdateRemainingCounter ENDP
+UpdateRemainingCellsCount ENDP
+
+
+;Doesn't take parameters
+;Fills board var with boards from last played game
+LoadLastGame PROC
+	;* If file is empty unhandled *;
+
+	mov Edx,offset board
+	mov Ebx,offset lastGameFile
+	call ReadArray
+
+	ret
+LoadLastGame ENDP
+
+
+;Takes: EDX offset of array to write to file
+;Takes: EBX offset of file name string
+;Writes given array to file with given string as name
+WriteBoardToFile PROC
+
+
+	ret
+WriteBoardToFile ENDP
 
 
 
 main PROC
 	
-	;Fetch Sudoku Boards from files
+	mWrite "*** Welcome to Sudoku Game built with Assembly ***"
+	call crlf
+	call crlf
+
+	;Ask user to continue last played game
+	mWrite "Do you want to continue the last game ?"
+	call crlf
+	mWrite "Enter Y if Yes or N if No"
+	call crlf
+	call ReadChar
+
+	cmp Al,'Y'
+	je RunLastGame
+	jmp StartGame
+
+	;Loading last game boards from file
+	RunLastGame:
+		call LoadLastGame
+		jmp PrintBoard
+
+	StartGame:
+	;Fetch Sudoku Boards from files depending on chosen difficulty
 	call GetDifficulty
 	call GetBoards
 
+	PrintBoard:
 	;Print Sudoku board
 	mov Edx,offset board
 	call PrintArray 
 	
-	call UpdateRemainingCounter
-	Movzx Eax, remainingCounter
+	;Put number of empty cells in the board in remainingCellsCount var
+	call UpdateRemainingCellsCount
+	Movzx Eax, remainingCellsCount
+
 
 	GamePlay:
+		;Prompt user for input
 		call TakeInput
 		call IsEditable
 		call EditCell
 
-		CMP remainingCounter, 0
-		JE finish
+		;Finish game if no empty cells remaining
+		CMP remainingCellsCount, 0
+		JE Finish
 
+		;Print updated board
 		call clrscr
 		mWrite "New Sudoko Board"
 		call crlf
 		call PrintArray
-	jmp GamePlay
 
-	finish:
+		mWrite "To exit and save current board press E, or anything to continue"
+		call crlf
+		call ReadChar
+
+		cmp AL,'E'
+		je SaveBoard
+		jmp GamePlay
+
+		;Saving current board if user choses exit
+		SaveBoard:
+			mov Edx,offset board
+			mov Ebx,offset lastGameFile
+			call WriteBoardToFile
+
+			mov Edx,offset solvedBoard
+			mov Ebx,offset lastGameSolvedFile
+			call WriteBoardToFile
+			exit
+
+
+	Finish:
 		call clrscr
 		mWrite "Congratulations"
 		call crlf
