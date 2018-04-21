@@ -43,7 +43,7 @@ lastGameSolvedFile Byte "sudoku_boards/last_game/board_solved.txt",0
 .code
 
 ;Reads the array from the file
-;param: Edx offset of the array to be filled
+;param: Esi offset of the array to be filled
 ;param: Ebx offset of string file name
 ;Returns: Array read from file in Edx
 ReadArray PROC
@@ -460,8 +460,12 @@ UpdateRemainingCellsCount ENDP
 LoadLastGame PROC
 	;* If file is empty unhandled *;
 
-	mov Edx,offset board
+	mov Esi,offset board
 	mov Ebx,offset lastGameFile
+	call ReadArray
+
+	mov Esi,offset solvedBoard
+	mov Ebx,offset lastGameSolvedFile
 	call ReadArray
 
 	ret
