@@ -27,6 +27,9 @@ wrongCounter Byte ?
 correctCounter Byte ?
 remainingCellsCount Byte ?
 
+;Bool indicating if current game is continuation of last game
+lastGameLoaded Byte ?
+
 buffer BYTE BUFFER_SIZE DUP(?)
 fileHandle HANDLE ?
 
@@ -458,8 +461,6 @@ UpdateRemainingCellsCount ENDP
 ;Doesn't take parameters
 ;Fills board var with boards from last played game
 LoadLastGame PROC
-	;* If file is empty unhandled *;
-
 	mov Esi,offset board
 	mov Ebx,offset lastGameFile
 	call ReadArray
@@ -467,6 +468,8 @@ LoadLastGame PROC
 	mov Esi,offset solvedBoard
 	mov Ebx,offset lastGameSolvedFile
 	call ReadArray
+
+	mov lastGameLoaded,1
 
 	ret
 LoadLastGame ENDP
@@ -532,16 +535,24 @@ main PROC
 
 		;Print updated board
 		call clrscr
-		mWrite "New Sudoko Board"
-		call crlf
-		call PrintArray
+		PrintUpdatedBoard:
+			mWrite "New Sudoko Board"
+			call crlf
+			mov Edx,offset board
+			call PrintArray
 
-		mWrite "To exit and save current board press E, or anything to continue"
+		mWrite "Press A to add a new cell"
+		call crlf
+		mWrite "Press C to reset the current board"
+		call crlf
+		mWrite "Press E to exit and save current board"
 		call crlf
 		call ReadChar
 
 		cmp AL,'E'
 		je SaveBoard
+		cmp Al,'C'
+		je ResetBoard
 		jmp GamePlay
 
 		;Saving current board if user choses exit
@@ -555,6 +566,30 @@ main PROC
 			call WriteBoardToFile
 			exit
 
+		;Rreset current board to initial state
+		ResetBoard:
+			cmp lastGameLoaded,1
+			je CantReset
+
+			;Calling ReadArray with required params to populate board var
+			mov esi,offset board
+			mov ebx,offset fileName
+			call ReadArray
+
+			;Calling ReadArray with required params to populate solvedBoard var
+			mov esi,offset solvedBoard
+			mov ebx,offset solvedFileName
+			call ReadArray
+
+			call clrscr
+			mWrite "Your Game Was Reset!"
+			call crlf
+			jmp PrintUpdatedBoard
+
+			CantReset:
+				mWrite "You can't reset a continued game"
+				call crlf
+				jmp GamePlay
 
 	Finish:
 		call clrscr
