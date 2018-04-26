@@ -6,9 +6,10 @@ BUFFER_SIZE=5000
 ;islam : getValue,editCell
 ;ahmad : getBoards,checkIndex,checkAnswer,IsEditable,LoadLastGame
 ;Hadil : readArray,takeInput
-;Raamyy: checkAvailble,getDifficulty,printArr
+;Raamyy: getDifficulty,printArr,WriteBoard
 
 .data
+
 
 ;Sudoko board
 board Byte 81 DUP(?)    
@@ -42,6 +43,10 @@ solvedFileName Byte "sudoku_boards/diff_?_?_solved.txt",0
 lastGameFile Byte "sudoku_boards/last_game/board.txt",0
 lastGameSolvedFile Byte "sudoku_boards/last_game/board_solved.txt",0
 
+
+;Variables for writing in array
+str1 BYTE "Cannot create file",0dh,0ah,0  
+newline byte 0Dh,0Ah
 
 .code
 
@@ -283,16 +288,17 @@ GetBoards PROC
 GetBoards ENDP
 
 
-
+;Prints the array on the console screen
 ;param Edx offset of array
 PrintArray PROC
-	PUSH Edx
+	PUSH Edx ;will be popped after finishing the function 
 	mov Ecx,81
 	l1:
 		mov Eax,0
 		movzx Eax,byte ptr [Edx]  ;Eax contains current number
 		push Eax
 		push Edx
+
 		mov dx,0
 		mov ax,cx     ;dx = cx % 9
  		mov bx,9
@@ -301,6 +307,7 @@ PrintArray PROC
 		cmp dx,0
 		jne NoEndl	  ;if dx % 9 = 0 print endl
 		call crlf
+
 		NoEndl:
 		pop Edx
 		pop Eax
@@ -308,6 +315,7 @@ PrintArray PROC
 		call writeDec
 		inc Edx
 	loop l1
+
 	call crlf
 	POP Edx
 	ret
@@ -336,7 +344,8 @@ TakeInput PROC
 	cmp eax ,1
 	je done
 
-	mWrite "There is an error in your input values... Please reenter them. " 
+	mWrite "There is an error in your input values... Please reEnter them. " 
+	call crlf
 	jmp again
 
 	done:
@@ -359,10 +368,12 @@ TakeInput ENDP
 
 ;Update Global variable Difficulty 
 GetDifficulty PROC
+	
 	again:
 	mWrite "Please Enter the difficulty: "
 	call crlf
 
+	;Checks if the difficulty is 1 or 2 or 3
 	call ReadDec
 	cmp al,1
 	je NoError
@@ -370,11 +381,13 @@ GetDifficulty PROC
 	je NoError
 	cmp al,3
 	je NoError
+
 	mWrite "Please enter a valid difficulty ( 1 or 2 or 3 ) "
 	call crlf
-	jmp again
+	jmp again ;Re Enter difficulty if it was wrong
+
 	NoError:
-	mov difficulty,al ;take the byte from eax
+	mov difficulty,al ;take the byte from eax which will be 1 or 2 or 3
 	
 	ret
 GetDifficulty ENDP
@@ -475,12 +488,78 @@ LoadLastGame PROC
 LoadLastGame ENDP
 
 
+
+;----------------------WARNING !-----------------------------
+;  This function changes the values of the board variable.  |
+;  So it must be called only in the end of the program !    |
+;------------------------------------------------------------
+
 ;Takes: EDX offset of array to write to file
 ;Takes: EBX offset of file name string
 ;Writes given array to file with given string as name
 WriteBoardToFile PROC
 
+	push edx
+	;Convert all Numbers of the array to chars to be written in the file
+	 mov ecx,81 ;number of elements of board
+	 loo:
+	 mov eax,48
+	 add [edx],al
+	 inc edx
+	 loop loo
 
+	; Create a new text file and error check.
+	 mov edx,ebx ;following function needs file name in ebx
+	 call CreateOutputFile
+	 mov fileHandle,eax
+	 ; Check for errors.
+	 cmp eax, INVALID_HANDLE_VALUE 
+	 ; error found? 
+	 jne file_ok ; no: skip
+	 mov edx,OFFSET str1
+	 ; display error 
+	 call WriteString
+	 jmp quit 
+	 file_ok:  
+
+;Writing in the file
+   pop edx ;address of the array to be typed
+   mov ecx,81  ;Length of array
+
+   l5:
+	   ;write charachter in the file
+	   mov eax,fileHandle
+	   push edx  ;push current character address
+	   push ecx  ;push the loop iterator
+	   mov ecx,1
+	   call WriteToFile
+	   pop ecx
+
+	   ;check if a new line should be printed or not
+			mov dx,0
+			dec ecx
+			mov ax,cx     ;dx = cx-1 % 9
+ 			mov bx,9
+			div bx
+
+			cmp dx,0 ; if not div by 9 , then no newline required.
+			jne noEndl
+
+			push ecx
+			 mov eax,fileHandle
+			 mov ecx,lengthof newline
+			 mov edx,offset newline
+			 call WriteToFile
+			pop ecx
+	
+		noEndl:
+	   inc ecx  ;as it was decremented above for calculating modulus
+	   pop edx  ;return the address of the read char
+	   inc edx  ;staging for writing next char
+   loop l5
+
+   quit:
+   
 	ret
 WriteBoardToFile ENDP
 
@@ -564,6 +643,12 @@ main PROC
 			mov Edx,offset solvedBoard
 			mov Ebx,offset lastGameSolvedFile
 			call WriteBoardToFile
+
+			call crlf
+			mwrite " ** Your Board was saved succssfully ! **"
+			call crlf
+			mwrite " ** Thanks for Playing **"
+			call crlf
 			exit
 
 		;Rreset current board to initial state
