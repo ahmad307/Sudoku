@@ -65,67 +65,62 @@ ReadArray PROC
 
 	;Check for reading from file errors
 	cmp eax, INVALID_HANDLE_VALUE	
-	jne file_ok	
+	jne FileHandleIsOk	
 	mWrite <"Cannot open file", 0dh, 0ah>
 	jmp quit
 
-	file_ok :
+	FileHandleIsOk :
 		; Read the file into a buffer
 		mov edx, OFFSET buffer
 		mov ecx, BUFFER_SIZE
 		call ReadFromFile
-		jnc check_buffer_size	;error reading ?
+		jnc CheckBufferSize	;if carry flag =0 then size of the buffer is ok
 		mWrite "Error reading file. "	
 		call WriteWindowsMsg
-		jmp close_file
+		jmp CloseFilee
 
-	check_buffer_size :
+	CheckBufferSize	 :
 		;Check if buffer is large enough
 		cmp eax, BUFFER_SIZE	
-		jb buf_size_ok
+		jb BufferSizeOk
 		mWrite <"Error: Buffer too small for the file", 0dh, 0ah>
 		jmp quit
 
-	buf_size_ok :
+BufferSizeOk :
 		;Insert null terminator
 		mov buffer[eax], 0
 
 	mov ebx, OFFSET buffer
 	mov ecx, 97
+	;store the offset of the array in edx to reuse it
 	mov edx,esi
 
-	l :
-	  mov al, [ebx]
-	  inc ebx
-	  cmp al, 13
-	  je line
-	  cmp al, 10
-	  je line
-	  mov [esi], al
-	  inc esi
-	  line : 
-	loop l
+	StoreContentInTheArray :
+		  mov al, [ebx]
+		  inc ebx
+		  cmp al, 13
+		  je SkipBecOfEndl
+		  cmp al, 10
+		  je SkipBecOfEndl
+		  mov [esi], al
+		  inc esi
+		 SkipBecOfEndl : 
+	loop StoreContentInTheArray
+
 
 	mov esi, edx
+	;store the offset of the array in edx to reuse it
+	
 	mov ecx, 81
-	mov eax, 0
+   ConvertFromCharToInt:
+		  sub byte ptr[esi],48
+	      inc esi 
+	loop ConvertFromCharToInt
 
-	l1:
-	  mov al, [esi]
-	  add esi, 1
-	loop l1
-
-	mov esi, edx
-	mov ecx, 81
-
-	l2:
-	   sub byte ptr[esi],48
-	   inc esi 
-	loop l2
-
+	;Return the offset of the filled array in esi
 	 mov esi, edx
 
-	close_file :
+CloseFilee :
 	mov eax, fileHandle
 	call CloseFile
 
