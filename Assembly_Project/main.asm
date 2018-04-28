@@ -56,82 +56,76 @@ newline byte 0Dh,0Ah
 ;Returns: Array read from file in EDX.						|
 ;------------------------------------------------------------
 ReadArray PROC
-	;Setting ECX with the mAX string size
-	MOV ECX,34
+		;Setting ECX with the max string size
+	mov ecx,34
 
 	;Open the file for input
-	MOV EDX,EBX
-	CALL OpenInputFile
-	MOV fileHandle, EAX
+	mov edx,ebx
+	call OpenInputFile
+	mov fileHandle, eax
 
 	;Check for reading from file errors
-	CMP EAX, INVALID_HANDLE_VALUE	
-	JNE file_ok	
+	cmp eax, INVALID_HANDLE_VALUE	
+	jne FileHandleIsOk	
 	mWrite <"Cannot open file", 0dh, 0ah>
-	JMP quit
+	jmp quit
 
-	file_ok :
+	FileHandleIsOk :
 		; Read the file into a buffer
-		MOV EDX, OFFSET buffer
-		MOV ECX, BUFFER_SIZE
-		CALL ReadFromFile
-		jnc check_buffer_size	;error reading ?
+		mov edx, OFFSET buffer
+		mov ecx, BUFFER_SIZE
+		call ReadFromFile
+		jnc CheckBufferSize	;if carry flag =0 then size of the buffer is ok
 		mWrite "Error reading file. "	
-		CALL WriteWindowsMsg
-		JMP close_file
+		call WriteWindowsMsg
+		jmp CloseFilee
 
-	check_buffer_size :
+	CheckBufferSize	 :
 		;Check if buffer is large enough
-		CMP EAX, BUFFER_SIZE	
-		jb buf_size_ok
+		cmp eax, BUFFER_SIZE	
+		jb BufferSizeOk
 		mWrite <"Error: Buffer too small for the file", 0dh, 0ah>
-		JMP quit
+		jmp quit
 
-	buf_size_ok :
+BufferSizeOk :
 		;Insert null terminator
-		MOV buffer[EAX], 0
+		mov buffer[eax], 0
 
-	MOV EBX, OFFSET buffer
-	MOV ECX, 97
-	MOV EDX,ESI
+	mov ebx, OFFSET buffer
+	mov ecx, 97
+	;store the offset of the array in edx to reuse it
+	mov edx,esi
 
-	l :
-	  MOV al, [EBX]
-	  INC EBX
-	  CMP al, 13
-	  JE line
-	  CMP al, 10
-	  JE line
-	  MOV [ESI], al
-	  INC ESI
-	  line : 
-	loop l
+	StoreContentInTheArray :
+		  mov al, [ebx]
+		  inc ebx
+		  cmp al, 13
+		  je SkipBecOfEndl
+		  cmp al, 10
+		  je SkipBecOfEndl
+		  mov [esi], al
+		  inc esi
+		 SkipBecOfEndl : 
+	loop StoreContentInTheArray
 
-	MOV ESI, EDX
-	MOV ECX, 81
-	MOV EAX, 0
 
-	l1:
-	  MOV al, [ESI]
-	  add ESI, 1
-	loop l1
+	mov esi, edx
+	;store the offset of the array in edx to reuse it
+	
+	mov ecx, 81
+   ConvertFromCharToInt:
+		  sub byte ptr[esi],48
+	      inc esi 
+	loop ConvertFromCharToInt
 
-	MOV ESI, EDX
-	MOV ECX, 81
+	;Return the offset of the filled array in esi
+	 mov esi, edx
 
-	l2:
-	   sub byte ptr[ESI],48
-	   INC ESI 
-	loop l2
-
-	 MOV ESI, EDX
-
-	close_file :
-	MOV EAX, fileHandle
-	CALL CloseFile
+CloseFilee :
+	mov eax, fileHandle
+	call CloseFile
 
 	quit :
-
 	ret
 ReadArray ENDP
 
