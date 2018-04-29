@@ -23,7 +23,8 @@ xCor Byte ?
 yCor Byte ?     
 ;User input value
 num Byte ?   
-starttime Dword ?
+
+startTime Dword ?
 
 wrongCounter Byte ?
 correctCounter Byte ?
@@ -140,7 +141,19 @@ ReadArray ENDP
 ;param: xCor,yCor,num (var)									|
 ;Returns: EAX 0, 1											|
 ;------------------------------------------------------------
-CheckIndex PROC
+CheckIndex PROC, val1:Byte, val2:Byte, val3:Byte
+	
+	PUSH EAX
+	
+	mov al, val1
+	Mov xCor, al
+	mov al, val2
+	Mov yCor, al
+	mov al, val3
+	Mov num, al
+	
+	POP EAX
+
 	;Checking xCor lies between 1 and 9
 	CMP xCor,9
 	ja WRONG
@@ -169,48 +182,26 @@ CheckIndex PROC
 		ret
 CheckIndex ENDP
 
-
-
-;----------------------CheckAnswer---------------------------
-;Checks if the answer in the given index is correct			|
-;Param: x, y, num											|
-;Returns: 1 in EAX if true, and 0 otherwise					|
-;------------------------------------------------------------
-CheckAnswer PROC
-	;Getting the answer value in AL
-	MOV EDX,offset solvedBoard
-	CALL GetValue
-
-	;MOVing the value to check to BL
-	MOV bl,num
-
-	;Comparing the given value with the answer
-	CMP bl,al
-	JE RIGHT
-	JMP WRONG
-
-	RIGHT:
-	MOV EAX,1
-	ret
-
-	WRONG:
-	MOV EAX,0
-
-	ret
-CheckAnswer ENDP
-
-
-
-
 ;----------------------GetValue------------------------------
 ;Returns the value in the given index						|
 ;Param: EDX pointer to the array							|
-;Param: x													|
-;Param: y													|
+;Param: xCor												|
+;Param: yCor												|
 ;Return: EAX = value										|
 ;------------------------------------------------------------
-GetValue PROC
-	CALL CheckIndex
+GetValue PROC, val1:Dword, val2:Byte, val3:Byte
+	
+	push eax
+
+	mov edx, val1
+	mov al, val2
+	mov xCor, al
+	mov al, val3
+	mov yCor, al
+
+	pop eax
+
+	Invoke CheckIndex, xCor, yCor, num
 	PUSH ECX
 	PUSH EDX
 	CMP EAX, 1
@@ -240,6 +231,52 @@ GetValue PROC
 GetValue ENDP
 
 
+;----------------------CheckAnswer---------------------------
+;Checks if the answer in the given index is correct			|
+;Param: x, y, num											|
+;Returns: 1 in EAX if true, and 0 otherwise					|
+;------------------------------------------------------------
+CheckAnswer PROC, val1:Byte, val2:Byte, val3:Byte
+
+	push eax
+	
+	mov al, val1
+	mov xCor, al
+	
+	mov al, val2
+	mov yCor, al
+
+	mov al, val3
+	mov num, al
+
+	pop eax
+
+	;Getting the answer value in AL
+	Invoke GetValue, offset solvedBoard, xCor, yCor
+
+	;MOVing the value to check to BL
+	MOV bl,num
+
+	;Comparing the given value with the answer
+	CMP bl,al
+	JE RIGHT
+	JMP WRONG
+
+	RIGHT:
+	MOV EAX,1
+	ret
+
+	WRONG:
+	MOV EAX,0
+
+	ret
+CheckAnswer ENDP
+
+
+
+
+
+
 
 ;----------------------GetBoards----------------------------
 ;Fills board,solvedBoards variables with data read from	   |
@@ -248,7 +285,13 @@ GetValue ENDP
 ;Param:   Difficulty (global var)						   |
 ;Returns: Desired board in board variable				   |
 ;-----------------------------------------------------------
-GetBoards PROC
+GetBoards PROC, val1: Byte
+
+	push eax
+		mov al, val1
+		mov Difficulty, al
+	pop eax
+
 	;Generating random value from AX and CX
 	xor AX,CX
 
@@ -298,7 +341,10 @@ GetBoards ENDP
 ;Prints the array to the console screen.					|
 ;Param: EDX offset of array									|
 ;------------------------------------------------------------
-PrintArray PROC
+PrintArray PROC, val1:Dword
+
+	mov edx, val1
+
 	PUSH EDX ;will be popped after finishing the function 
 	MOV ECX,81
 	l1:
@@ -352,7 +398,7 @@ TakeInput PROC
 	CALL ReadDec
 	MOV num,AL
 
-	CALL CheckIndex
+	Invoke checkindex, xCor, yCor, num
 	CMP EAX ,1
 	JE done
 
@@ -415,13 +461,27 @@ GetDifficulty ENDP
 ;Params: x, y, num (global variables).						|
 ;Updates:  Cell value at co-ordinate (x,y).					|
 ;------------------------------------------------------------
-EditCell PROC
+EditCell PROC, val1:Byte, val2:Byte, val3:Byte
+
+	push eax
+
+	mov al, val1
+	mov xCor, al
+
+	mov al, val2
+	mov yCor, al
+
+	mov al, val3
+	mov num, al
+
+	pop eax
+
 	PUSH EDX
 	PUSH ECX
-	CALL CheckIndex
+	Invoke CheckIndex, xCor, yCor, num
 	CMP EAX, 0
 	JE Ending
-		CALL CheckAnswer
+		Invoke CheckAnswer, xCor, yCor, num
 		CMP EAX, 0
 	JE Ending
 		DEC xCor
@@ -452,8 +512,8 @@ EditCell ENDP
 ;Returns: 1 in EAX if the place is editable and 0 otherwise. |
 ;------------------------------------------------------------
 IsEditable PROC
-	MOV EDX,offset board
-	CALL GetValue
+	
+	Invoke GetValue, offset board, xCor, yCor
 
 	;Checking value returned from GetValue
 	CMP EAX,0
@@ -527,7 +587,14 @@ LoadLastGame ENDP
 ;Param: EDX offset of array to write to file.				|	
 ;Param: EBX offset of file name string.						|
 ;------------------------------------------------------------
-WriteBoardToFile PROC
+WriteBoardToFile PROC, val1:Dword, val2:Dword
+
+	push eax
+
+	mov edx, val1
+	mov ebx, val2
+
+	pop eax
 
 	PUSH EDX
 	;Convert all Numbers of the array to chars to be written in the file
@@ -620,7 +687,7 @@ main PROC
 	StartGame:
 	;Fetch Sudoku Boards from files depending on chosen difficulty
 	CALL GetDifficulty
-	CALL GetBoards
+	Invoke GetBoards, difficulty
 
 	;start timer
 	Invoke GetTickCount
@@ -628,8 +695,7 @@ main PROC
 
 	PrintBoard:
 	;Print Sudoku board
-	MOV EDX,offset board
-	CALL PrintArray 
+	Invoke PrintArray, offset Board
 	
 	;Put number of empty cells in the board in remainingCellsCount var
 	CALL UpdateRemainingCellsCount
@@ -640,7 +706,8 @@ main PROC
 		;Prompt user for input
 		CALL TakeInput
 		CALL IsEditable
-		CALL EditCell
+		
+		Invoke EditCell, xCor, yCor, num
 
 		;Finish game if no empty cells remaining
 		CMP remainingCellsCount, 0
@@ -651,8 +718,7 @@ main PROC
 		PrintUpdatedBoard:
 			mWrite "New Sudoko Board"
 			CALL crlf
-			MOV EDX,offset board
-			CALL PrintArray
+			Invoke PrintArray, offset Board
 
 		mWrite "Press A to add a new cell"
 		CALL crlf
@@ -670,13 +736,9 @@ main PROC
 
 		;Saving current board if user choses exit
 		SaveBoard:
-			MOV EDX,offset board
-			MOV EBX,offset lastGameFile
-			CALL WriteBoardToFile
+			Invoke WriteBoardToFile, offset board, offset lastgamefile
 
-			MOV EDX,offset solvedBoard
-			MOV EBX,offset lastGameSolvedFile
-			CALL WriteBoardToFile
+			Invoke WriteBoardToFile, offset solvedBoard, offset lastGameSolvedFile
 
 			CALL crlf
 			mwrite " ** Your Board was saved succssfully ! **"
