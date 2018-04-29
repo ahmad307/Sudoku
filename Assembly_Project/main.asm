@@ -23,6 +23,7 @@ xCor Byte ?
 yCor Byte ?     
 ;User input value
 num Byte ?   
+starttime Dword ?
 
 wrongCounter Byte ?
 correctCounter Byte ?
@@ -55,8 +56,11 @@ newline byte 0Dh,0Ah
 ;param: EBX offset of string file name.						|
 ;Returns: Array read from file in EDX.						|
 ;------------------------------------------------------------
-ReadArray PROC
-		;Setting ECX with the max string size
+ReadArray PROC, arrayoffset:Dword, filenameoffset:Dword
+	
+	;Setting ECX with the max string size
+	mov esi, arrayoffset
+	mov ebx, filenameoffset
 	mov ecx,34
 
 	;Open the file for input
@@ -280,14 +284,10 @@ GetBoards PROC
 	MOV solvedFileName[19],al
 
 	;Calling ReadArray with required params to populate board var
-	MOV ESI,offset board
-	MOV EBX,offset fileName
-	CALL ReadArray
+	Invoke ReadArray, offset board, offset filename
 
 	;Calling ReadArray with required params to populate solvedBoard var
-	MOV ESI,offset solvedBoard
-	MOV EBX,offset solvedFileName
-	CALL ReadArray
+	Invoke ReadArray, offset solvedBoard, offset solvedFileName
 
 	ret
 GetBoards ENDP
@@ -504,13 +504,11 @@ UpdateRemainingCellsCount ENDP
 ;Does not take parametrs.									|
 ;------------------------------------------------------------
 LoadLastGame PROC
-	MOV ESI,offset board
-	MOV EBX,offset lastGameFile
-	CALL ReadArray
+	Invoke ReadArray, offset board, offset lastGameFile
 
 	MOV ESI,offset solvedBoard
 	MOV EBX,offset lastGameSolvedFile
-	CALL ReadArray
+	Invoke ReadArray, offset solvedBoard, offset lastGameFile
 
 	MOV lastGameLoaded,1
 
@@ -624,6 +622,10 @@ main PROC
 	CALL GetDifficulty
 	CALL GetBoards
 
+	;start timer
+	Invoke GetTickCount
+	mov StartTime, eax
+
 	PrintBoard:
 	;Print Sudoku board
 	MOV EDX,offset board
@@ -681,6 +683,14 @@ main PROC
 			CALL crlf
 			mwrite " ** Thanks for Playing **"
 			CALL crlf
+
+			Invoke GetTickCount
+			sub eax, starttime
+
+			mWrite <"Time Taken: ">
+			call writedec
+			call crlf
+
 			exit
 
 		;Rreset current board to initial state
