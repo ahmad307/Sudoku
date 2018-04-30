@@ -677,7 +677,7 @@ UpdateRemainingCellsCount PROC
 		MOV ECX, 81
 		L1:
 			MOV Al, [EDX]
-			CMP Al, 0
+			CMP Al, '0'
 			JNE skip
 				INC remainingCellsCount
 			skip:
@@ -887,7 +887,11 @@ main PROC
 			mWrite <"Time Taken: ">
 			call writedec
 			call crlf
-
+			mWrite "Number of Remaining cells: "
+			call UpdateRemainingCellsCount
+			movzx eax,remainingCellsCount
+			call writedec
+			call crlf
 			exit
 
 		;Rreset current board to initial state
