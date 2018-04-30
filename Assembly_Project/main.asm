@@ -15,6 +15,7 @@ BUFFER_SIZE=5000
 board Byte 81 DUP(?)    
 
 helpCounter DWORD ?
+helpcounter2 Byte ?
 
 
 ;Solved Sudoku board
@@ -348,8 +349,15 @@ GetBoards ENDP
 PrintArray PROC, val1:Dword
 
 	mov helpCounter,1
+	mov helpCounter2,1
 	mov edx, val1
+
 	call crlf
+	mov al,' '
+	call writechar
+	call writechar
+	call writechar
+	call writechar
 	mov eax,1
 	mov ecx,9
 
@@ -359,6 +367,7 @@ PrintArray PROC, val1:Dword
 		mov al,' '
 		call writechar
 		call writechar
+		
 		pop eax
 		inc eax
 	loop topNumbers
@@ -379,13 +388,22 @@ PrintArray PROC, val1:Dword
 		CMP dx,0
 		JNE NoEndl	  ;if dx % 9 = 0 print endl
 		CALL crlf
+		mov al,' ' ;leave it alone
+		call writechar
+		call writechar
+		call writechar
+
+
+		mov al,'|' ;leave it alone
+		call writechar
+		
+
 
 		push ecx
 		mov edi,ecx
 		mov ecx,9
 		dashes:
 			mov al,196 ;horizontal line
-			
 			cmp edi,81
 			jne process
 			push ecx
@@ -405,7 +423,7 @@ PrintArray PROC, val1:Dword
 			cmp edi,0
 
 
-			mov al,' '
+			mov al,' ';leave it
 			print:
 			call writechar
 			cmp ecx,1
@@ -414,7 +432,7 @@ PrintArray PROC, val1:Dword
 			Nobar:
 			cmp ecx,1
 			jne yarab
-			mov al,' '
+			mov al,' ';leave
 			yarab:
 			call writechar
 			cmp ecx,7
@@ -432,6 +450,16 @@ PrintArray PROC, val1:Dword
 		pop ecx
 	
 		call crlf
+		mov al,' '
+	call writechar
+		mov al,helpCounter2
+		call writedec
+		mov al,' '
+	call writechar
+		inc helpcounter2
+		mov al,'|'
+		call writechar
+
 		NoEndl:
 		POP EDX
 		POP EAX
@@ -439,6 +467,7 @@ PrintArray PROC, val1:Dword
 		CALL writeDec
 		mov al,' '
 		call writechar
+		
 		mov al, ' '
 		cmp helpCounter,3
 		jne print2
@@ -454,12 +483,22 @@ PrintArray PROC, val1:Dword
 
 
 	CALL crlf
+	mov al,' '
+	call writechar
+	call writechar
+	call writechar
+
+	
 	mov ecx,27
 	mov al,196
 	BottomDashes:
 	call writechar
 	loop BottomDashes
+	mov al,'|'
+	call writechar
 	call crlf
+	mov al,' '
+	call writechar
 	POP EDX
 	ret
 PrintArray ENDP
