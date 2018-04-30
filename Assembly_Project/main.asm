@@ -14,6 +14,9 @@ BUFFER_SIZE=5000
 ;Sudoko board
 board Byte 81 DUP(?)    
 
+helpCounter DWORD ?
+
+
 ;Solved Sudoku board
 solvedBoard Byte 81 DUP(?)	
 
@@ -25,7 +28,7 @@ yCor Byte ?
 num Byte ?   
 starttime Dword ?
 
-startTime Dword ?
+
 
 wrongCounter Byte ?
 correctCounter Byte ?
@@ -344,8 +347,22 @@ GetBoards ENDP
 ;------------------------------------------------------------
 PrintArray PROC, val1:Dword
 
+	mov helpCounter,1
 	mov edx, val1
+	call crlf
+	mov eax,1
+	mov ecx,9
 
+	topNumbers:	
+		call writedec
+		push eax
+		mov al,' '
+		call writechar
+		call writechar
+		pop eax
+		inc eax
+	loop topNumbers
+	
 	PUSH EDX ;will be popped after finishing the function 
 	MOV ECX,81
 	l1:
@@ -363,15 +380,86 @@ PrintArray PROC, val1:Dword
 		JNE NoEndl	  ;if dx % 9 = 0 print endl
 		CALL crlf
 
+		push ecx
+		mov edi,ecx
+		mov ecx,9
+		dashes:
+			mov al,196 ;horizontal line
+			
+			cmp edi,81
+			jne process
+			push ecx
+			mov ecx,3
+			mov al,196
+			horiDashes:
+			call writechar
+			loop horiDashes
+			pop ecx
+			jmp endloop
+
+			process:
+			cmp edi,54
+			je print
+			cmp edi,27
+			je print
+			cmp edi,0
+
+
+			mov al,' '
+			print:
+			call writechar
+			cmp ecx,1
+			jne noBar
+			mov al,196
+			Nobar:
+			cmp ecx,1
+			jne yarab
+			mov al,' '
+			yarab:
+			call writechar
+			cmp ecx,7
+			je draw
+			cmp ecx,1
+			je draw
+			cmp ecx,4
+			jne skip
+			draw:
+			mov al,'|'
+			skip:
+			call writechar
+			endloop:
+		loop dashes
+		pop ecx
+	
+		call crlf
 		NoEndl:
 		POP EDX
 		POP EAX
-
+		
 		CALL writeDec
+		mov al,' '
+		call writechar
+		mov al, ' '
+		cmp helpCounter,3
+		jne print2
+		mov al,'|'
+		mov helpCounter,0
+		print2:
+		call writechar
 		INC EDX
-	loop l1
+		inc helpCounter
+		
+		dec cx
+		jne l1  ;because of loop causes too far error
+
 
 	CALL crlf
+	mov ecx,27
+	mov al,196
+	BottomDashes:
+	call writechar
+	loop BottomDashes
+	call crlf
 	POP EDX
 	ret
 PrintArray ENDP
