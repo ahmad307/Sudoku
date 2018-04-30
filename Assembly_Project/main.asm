@@ -701,12 +701,14 @@ main PROC
 			;calling ReadArray with required params to populate board var
 			MOV ESI,offset board
 			MOV EBX,offset fileName
-			CALL ReadArray
+			;CALL ReadArray
+			Invoke ReadArray, offset board, offset filename
 
 			;Calling ReadArray with required params to populate solvedBoard var
 			MOV ESI,offset solvedBoard
 			MOV EBX,offset solvedFileName
-			CALL ReadArray
+			;CALL ReadArray
+			Invoke ReadArray, offset board, offset filename
 
 			CALL clrscr
 			mWrite "Your Game Was Reset!"
