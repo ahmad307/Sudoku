@@ -10,6 +10,7 @@ BUFFER_SIZE=5000
 
 .data
 
+beep byte 07h
 
 ;Sudoko board
 board Byte 81 DUP(?)    
@@ -272,8 +273,10 @@ CheckAnswer PROC, val1:Byte, val2:Byte, val3:Byte
 	ret
 
 	WRONG:
+	mov al,beep
+	call writechar
 	MOV EAX,0
-
+	
 	ret
 CheckAnswer ENDP
 
