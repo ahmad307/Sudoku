@@ -684,6 +684,7 @@ IsEditable ENDP
 UpdateRemainingCellsCount PROC
 	PUSH EDX
 	PUSH ECX
+	PUSH EAX
 		MOV remainingCellsCount, 0
 		MOV EDX, offset Board
 		MOV ECX, 81
@@ -695,6 +696,7 @@ UpdateRemainingCellsCount PROC
 			skip:
 				INC EDX
 		Loop L1
+	POP EAX
 	POP ECX
 	POP EDX
 	ret
