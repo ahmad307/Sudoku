@@ -10,14 +10,8 @@ BUFFER_SIZE=5000
 
 .data
 
-beep byte 07h
-
 ;Sudoko board
 board Byte 81 DUP(?)    
-
-helpCounter DWORD ?
-helpcounter2 Byte ?
-
 
 ;Solved Sudoku board
 solvedBoard Byte 81 DUP(?)	
@@ -26,23 +20,18 @@ solvedBoard Byte 81 DUP(?)
 xCor Byte ?		
 ;Y coordinate
 yCor Byte ?     
-;User input value
+;User input value for chosen cell
 num Byte ?   
-starttime Dword ?
 
+difficulty Byte ?	;1 Easy, 2 Medium, 3 Hard
 
-
+;Game stats counters
 wrongCounter Byte ?
 correctCounter Byte ?
 remainingCellsCount Byte ?
 
 ;Bool indicating if current game is continuation of last game
 lastGameLoaded Byte ?
-
-buffer Byte BUFFER_SIZE DUP(?)
-fileHandle HANDLE ?
-
-difficulty Byte ?	;1 Easy, 2 Medium, 3 Hard
 
 ;Data files paths
 fileName Byte "sudoku_boards/diff_?_?.txt",0
@@ -51,23 +40,35 @@ solvedFileName Byte "sudoku_boards/diff_?_?_solved.txt",0
 lastGameFile Byte "sudoku_boards/last_game/board.txt",0
 lastGameSolvedFile Byte "sudoku_boards/last_game/board_solved.txt",0
 
+;Variables for reading from file
+buffer Byte BUFFER_SIZE DUP(?)
+fileHandle HANDLE ?
 
 ;Variables for writing in array
 str1 BYTE "Cannot create file",0dh,0ah,0  
 newline byte 0Dh,0Ah
 
+;Helper variables for PrintArray procedure
+helpCounter Dword ?
+helpCounter2 Byte ?
+
+;Used for calculating game duration
+startTime Dword ?
+
+beep byte 07h
+
 .code
 ;----------------------ReadArray-----------------------------
 ;Reads the array from the file.					     		|
-;param: ESI offset of the array to be filled,				|
-;param: EBX offset of string file name.						|
+;param arrayOffset (ESI): offset of the array to be filled.		|
+;param fileNameOffset (EBX): offset of string file name.			|
 ;Returns: Array read from file in EDX.						|
 ;------------------------------------------------------------
-ReadArray PROC, arrayoffset:Dword, filenameoffset:Dword
+ReadArray PROC, arrayOffset:Dword, fileNameOffset:Dword
 	
 	;Setting ECX with the max string size
-	mov esi, arrayoffset
-	mov ebx, filenameoffset
+	mov esi, arrayOffset
+	mov ebx, fileNameOffset
 	mov ecx,34
 
 	;Open the file for input
@@ -99,8 +100,8 @@ ReadArray PROC, arrayoffset:Dword, filenameoffset:Dword
 		jmp quit
 
 BufferSizeOk :
-		;Insert null terminator
-		mov buffer[eax], 0
+	;Insert null terminator
+	mov buffer[eax], 0
 
 	mov ebx, OFFSET buffer
 	mov ecx, 97
@@ -143,9 +144,12 @@ ReadArray ENDP
 
 
 ;----------------------CheckIndex----------------------------
-;Checks if index out of range / not reserved				|
-;param: xCor,yCor,num (var)									|
-;Returns: EAX 0, 1											|
+;Checks if index out of range / not reserved.				|
+;param val1: xCor.			   -------------				|
+;param val2: yCor.		       |Global Vars|				|
+;param val3: cell value.	   -------------				|
+;Returns: 1 in EAX if coordinates and input are valid,		|
+;	or 0 otherwise.											|
 ;------------------------------------------------------------
 CheckIndex PROC, val1:Byte, val2:Byte, val3:Byte
 	
@@ -188,12 +192,14 @@ CheckIndex PROC, val1:Byte, val2:Byte, val3:Byte
 		ret
 CheckIndex ENDP
 
+
+
 ;----------------------GetValue------------------------------
 ;Returns the value in the given index						|
-;Param: EDX pointer to the array							|
-;Param: xCor												|
-;Param: yCor												|
-;Return: EAX = value										|
+;Param val1 (EDX): pointer to the array.					|
+;Param val2: xCor.											|
+;Param val3: yCor.											|
+;Return: given coordinates' value in EAX.					|
 ;------------------------------------------------------------
 GetValue PROC, val1:Dword, val2:Byte, val3:Byte
 	
@@ -237,10 +243,13 @@ GetValue PROC, val1:Dword, val2:Byte, val3:Byte
 GetValue ENDP
 
 
+
 ;----------------------CheckAnswer---------------------------
 ;Checks if the answer in the given index is correct			|
-;Param: x, y, num											|
-;Returns: 1 in EAX if true, and 0 otherwise					|
+;Param val1: xCor.											|
+;Param val2: yCor.											|
+;Param val3: cell value.									|
+;Returns: 1 in EAX if true, and 0 otherwise.				|
 ;------------------------------------------------------------
 CheckAnswer PROC, val1:Byte, val2:Byte, val3:Byte
 
@@ -282,15 +291,11 @@ CheckAnswer ENDP
 
 
 
-
-
-
-
 ;----------------------GetBoards----------------------------
 ;Fills board,solvedBoards variables with data read from	   |
 ;	file depending on given difficulty and a generated	   |
 ;	random number.										   |	
-;Param:   Difficulty (global var)						   |
+;Param val1:   Difficulty	(Gloval Var)							   |
 ;Returns: Desired board in board variable				   |
 ;-----------------------------------------------------------
 GetBoards PROC, val1: Byte
@@ -347,7 +352,7 @@ GetBoards ENDP
 
 ;----------------------PrintArray----------------------------
 ;Prints the array to the console screen.					|
-;Param: EDX offset of array									|
+;Param val1 (EDX): offset of array.								|
 ;------------------------------------------------------------
 PrintArray PROC, val1:Dword
 
@@ -379,7 +384,7 @@ PrintArray PROC, val1:Dword
 	MOV ECX,81
 	l1:
 		MOV EAX,0
-		MOVzx EAX,byte ptr [EDX]  ;EAX contains current number
+		MOVzx EAX,byte ptr [EDX]	;EAX contains current number
 		PUSH EAX
 		PUSH EDX
 
@@ -589,9 +594,10 @@ GetDifficulty ENDP
 
 ;----------------------EditCell------------------------------
 ;Updates cell's value at co-ordinate (x,y).					|
-;Params: x, y, num (global variables).						|
-;Updates:  Cell value at co-ordinate (x,y).					|
-;Return 1 in EAX if the cell was edited ,0 otherwise		|
+;Param val1: xCor.											|
+;Param val2: yCor.											|
+;Param val3: cell value.                                    |
+;Return: 1 in EAX if the cell was edited ,0 otherwise.      |
 ;------------------------------------------------------------
 EditCell PROC, val1:Byte, val2:Byte, val3:Byte
 
@@ -610,7 +616,7 @@ EditCell PROC, val1:Byte, val2:Byte, val3:Byte
 
 	PUSH EDX
 	PUSH ECX
-	;Invoke CheckIndex, xCor, yCor, num Already done in TakeInput
+	;Invoke CheckIndex, xCor, yCor, num  |Already done in TakeInput
 	CMP EAX, 0
 	JE Ending
 		Invoke CheckAnswer, xCor, yCor, num
@@ -619,9 +625,9 @@ EditCell PROC, val1:Byte, val2:Byte, val3:Byte
 		DEC xCor
 		DEC yCor
 		MOV EAX, 9
-		MOVzx ECX, xCor
+		MOVZX ECX, xCor
 		Mul ECX
-		MOVzx ECX, yCor
+		MOVZX ECX, yCor
 		Add EAX, ECX
 		MOV EDX, offset board
 		Add EDX, EAX
@@ -721,8 +727,8 @@ LoadLastGame ENDP
 
 ;-------------------WriteBoardToFile-------------------------
 ;Writes given array to file with given string as name.		|
-;Param: EDX offset of array to write to file.				|	
-;Param: EBX offset of file name string.						|
+;Param val1 (EDX): offset of array to write to file.		|	
+;Param val2 (EBX): offset of file name string.				|
 ;------------------------------------------------------------
 WriteBoardToFile PROC, val1:Dword, val2:Dword
 
@@ -735,7 +741,7 @@ WriteBoardToFile PROC, val1:Dword, val2:Dword
 
 	PUSH EDX
 	;Convert all Numbers of the array to chars to be written in the file
-	 MOV ECX,81		 ; MOVe number of board elements to ECX
+	 MOV ECX,81		 ; Move number of board elements to ECX
 	 loo:
 	 MOV EAX,48
 	 add [EDX],al
@@ -743,7 +749,7 @@ WriteBoardToFile PROC, val1:Dword, val2:Dword
 	 loop loo
 
 	; Create a new text file and error check.
-	 MOV EDX,EBX	;MOVe file name offset to EDX for CreatOutputFile
+	 MOV EDX,EBX	;Move file name offset to EDX for CreatOutputFile
 	 CALL CreateOutputFile
 	 MOV fileHandle,EAX
 	 ; Check for errors.
@@ -842,25 +848,25 @@ main PROC
 	;Loading last game boards from file
 	RunLastGame:
 		CALL LoadLastGame
-		JMP showBoardAndOptions
+		JMP showBoard
 
 	StartGame:
 	;Fetch Sudoku Boards from files depending on chosen difficulty
 	CALL GetDifficulty
-	Invoke GetBoards, difficulty
+	INVOKE GetBoards, difficulty
 
 	;start timer
 	Invoke GetTickCount
 	mov StartTime, eax
 
-	jmp showBoardAndOptions
+	jmp showBoard
 
 	GamePlay:
 		;Prompt user for input
 		CALL TakeInput
 		
 		
-		Invoke EditCell, xCor, yCor, num
+		INVOKE EditCell, xCor, yCor, num
 
 		;updates count of cremaining cells 
 		call updateRemainingCellsCount
@@ -871,40 +877,50 @@ main PROC
 
 		;Print updated board
 		CALL clrscr
-		
-		cmp EAX,1
-		jne WrongAnswer
-			mov eax,2 ;Set to Green Color
-			call SetTextColor
+		PrintUpdatedBoard:
+		CMP EAX,1
+		JNE WrongAnswer
+			MOV eax,2    ;Set to Green Color
+			CALL SetTextColor
 			mWrite "Correct !"
-			mov eax,15 ;Set Color Back to white
-			call SetTextColor
+			MOV eax,15    ;Set Color Back to white
+			CALL SetTextColor
 			CALL crlf
-			jmp ShowBoardAndOptions
+			JMP ShowBoard
 		WrongAnswer:
-			mov eax,4 ;Set to Red Color
-			call SetTextColor
+				MOV eax,4    ;Set to Red Color
+			CALL SetTextColor
 			mWrite "Wrong Input :( !"
-			mov eax,15 ;Set Color Back to white
-			call SetTextColor
+			MOV eax,15    ;Set Color Back to white
+			CALL SetTextColor
 			CALL crlf
 
-			ShowBoardAndOptions:
-		;	call UpdateRemainingCellsCount
-			Invoke PrintArray, offset Board
+		ShowBoard:
+		INVOKE PrintArray, offset Board
+
+		ShowOptions:
 		mWrite "Press A to add a new cell"
 		CALL crlf
 		mWrite "Press C to reset the current board"
+		CALL crlf
+		mWrite "Press S to print the solved board"
 		CALL crlf
 		mWrite "Press E to exit and save current board"
 		CALL crlf
 		CALL ReadChar
 
+		GetChoice:
+		CMP AL,'A'
+		JE GamePlay
 		CMP AL,'E'
 		JE SaveBoard
 		CMP Al,'C'
 		JE ResetBoard
-		JMP GamePlay
+		CMP AL,'S'
+		JE PrintSolvedBoard
+
+		mWrite "Enter a valid choice!"
+		JMP ShowBoard
 
 		;Saving current board if user choses exit
 		SaveBoard:
@@ -919,14 +935,16 @@ main PROC
 			movzx eax,remainingCellsCount
 			call writedec
 
-			Invoke WriteBoardToFile, offset board, offset lastgamefile
+			
 
-			Invoke WriteBoardToFile, offset solvedBoard, offset lastGameSolvedFile
+			INVOKE WriteBoardToFile, offset board, offset lastGameFile
+
+			INVOKE WriteBoardToFile, offset solvedBoard, offset lastGameSolvedFile
 
 			CALL crlf
-			mwrite " ** Your Board was saved succssfully ! **"
+			mWrite " ** Your Board was saved succssfully ! **"
 			CALL crlf
-			mwrite " ** Thanks for Playing **"
+			mWrite " ** Thanks for Playing **"
 			CALL crlf
 
 			call crlf
@@ -952,12 +970,35 @@ main PROC
 			CALL clrscr
 			mWrite "Your Game Was Reset!"
 			CALL crlf
-			JMP ShowBoardAndOptions
+			JMP ShowBoard
 
 			CantReset:
 				mWrite "You can't reset a continued game"
 				CALL crlf
 				JMP GamePlay
+
+		PrintSolvedBoard:
+			INVOKE PrintArray, offset solvedBoard
+
+			Invoke GetTickCount
+			sub eax, starttime
+
+			mWrite <"Time Taken: ">
+			call writedec
+			call crlf
+			mWrite "Number of Remaining cells: "
+			call UpdateRemainingCellsCount
+			movzx eax,remainingCellsCount
+			call writedec
+			call crlf
+			call crlf
+
+			mWrite " ** Thanks for Playing **"
+			CALL crlf
+
+			exit
+
+
 
 	Finish:
 		CALL clrscr
