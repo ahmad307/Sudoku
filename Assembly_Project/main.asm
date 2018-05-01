@@ -889,7 +889,7 @@ main PROC
 			MOV eax,15    ;Set Color Back to white
 			CALL SetTextColor
 			CALL crlf
-			JMP ShowBoardAndOptions
+			JMP ShowBoard
 		WrongAnswer:
 				MOV eax,4    ;Set to Red Color
 			CALL SetTextColor
@@ -898,22 +898,32 @@ main PROC
 			CALL SetTextColor
 			CALL crlf
 
-		ShowBoardAndOptions:
+		ShowBoard:
 		INVOKE PrintArray, offset Board
 
+		ShowOptions:
 		mWrite "Press A to add a new cell"
 		CALL crlf
 		mWrite "Press C to reset the current board"
+		CALL crlf
+		mWrite "Press S to print the solved board"
 		CALL crlf
 		mWrite "Press E to exit and save current board"
 		CALL crlf
 		CALL ReadChar
 
+		GetChoice:
+		CMP AL,'A'
+		JE GamePlay
 		CMP AL,'E'
 		JE SaveBoard
 		CMP Al,'C'
 		JE ResetBoard
-		JMP GamePlay
+		CMP AL,'S'
+		JE PrintSolvedBoard
+
+		mWrite "Enter a valid choice!"
+		JMP ShowBoard
 
 		;Saving current board if user choses exit
 		SaveBoard:
@@ -961,12 +971,16 @@ main PROC
 			CALL clrscr
 			mWrite "Your Game Was Reset!"
 			CALL crlf
-			JMP ShowBoardAndOptions
+			JMP ShowBoard
 
 			CantReset:
 				mWrite "You can't reset a continued game"
 				CALL crlf
 				JMP GamePlay
+
+		PrintSolvedBoard:
+			INVOKE PrintArray, offset solvedBoard
+			JMP ShowOptions
 
 	Finish:
 		CALL clrscr
