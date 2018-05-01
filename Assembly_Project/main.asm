@@ -1036,6 +1036,9 @@ main PROC
 
 	;Loading last game boards from file
 	RunLastGame:
+	;start timer
+	Invoke GetTickCount
+	mov StartTime, eax
 		CALL LoadLastGame
 		JMP showBoard
 
