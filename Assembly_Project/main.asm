@@ -337,6 +337,10 @@ GetBoards PROC, val1: Byte
 	;Calling ReadArray with required params to populate board var
 	Invoke ReadArray, offset board, offset filename
 
+	
+	mov edx,offset solvedBoard
+	call writestring
+	call crlf
 	;Calling ReadArray with required params to populate solvedBoard var
 	Invoke ReadArray, offset solvedBoard, offset solvedFileName
 
@@ -705,7 +709,7 @@ LoadLastGame PROC
 
 	MOV ESI,offset solvedBoard
 	MOV EBX,offset lastGameSolvedFile
-	Invoke ReadArray, offset solvedBoard, offset lastGameFile
+	Invoke ReadArray, offset solvedBoard, offset lastGameSolvedFile
 
 	MOV lastGameLoaded,1
 
@@ -888,7 +892,7 @@ main PROC
 			mov eax,15 ;Set Color Back to white
 			call SetTextColor
 			CALL crlf
-			jmp ShowOptions
+			jmp ShowBoardAndOptions
 		WrongAnswer:
 				mov eax,4 ;Set to Red Color
 			call SetTextColor
@@ -897,7 +901,7 @@ main PROC
 			call SetTextColor
 			CALL crlf
 
-			ShowOptions:
+			ShowBoardAndOptions:
 			Invoke PrintArray, offset Board
 		mWrite "Press A to add a new cell"
 		CALL crlf
@@ -959,7 +963,7 @@ main PROC
 			CALL clrscr
 			mWrite "Your Game Was Reset!"
 			CALL crlf
-			JMP PrintUpdatedBoard
+			JMP ShowBoardAndOptions
 
 			CantReset:
 				mWrite "You can't reset a continued game"
