@@ -301,7 +301,7 @@ CheckAnswer ENDP
 ;Fills board,solvedBoards variables with data read from	   |
 ;	file depending on given difficulty and a generated	   |
 ;	random number.										   |	
-;Param val1:   Difficulty	(Gloval Var)							   |
+;Param val1:   Difficulty	(Gloval Var)				   |
 ;Returns: Desired board in board variable				   |
 ;-----------------------------------------------------------
 GetBoards PROC, val1: Byte
@@ -521,7 +521,7 @@ PrintArray ENDP
 
 
 ;----------------------PrintArray----------------------------
-;Prints the solved array to the console screen.					|
+;Prints the solved array to the console screen.				|
 ;Param val1 (EDX): offset of array.							|
 ;------------------------------------------------------------
 PrintSolvedArray PROC, val1:Dword
@@ -699,18 +699,6 @@ PrintSolvedArray PROC, val1:Dword
 	POP EDX
 	ret
 PrintSolvedArray ENDP
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1030,8 +1018,6 @@ ColorizeText ENDP
 
 
 main PROC
-
-	
 	
 	mWrite "*** Welcome to Sudoku Game built with Assembly ***"
 	CALL crlf
@@ -1147,10 +1133,15 @@ main PROC
 			INVOKE WriteBoardToFile, offset board, offset lastGameFile
 			INVOKE WriteBoardToFile, offset solvedBoard, offset lastGameSolvedFile
 
+			;Prevent calling dummy file if the game is a continued game
+			CMP lastGameLoaded, 1
+			JE SkipLoading
+
 			;Restoring unsolved board from data file
 			INVOKE ReadArray, offset board, offset fileName
 			INVOKE WriteBoardToFile, offset board, offset lastGameUnsolvedFile
 
+			SkipLoading:
 			CALL crlf
 			mWrite " ** Your Board was saved succssfully ! **"
 			CALL crlf
@@ -1166,15 +1157,12 @@ main PROC
 
 			;Call ReadArray with required params to populate board var
 			Invoke ReadArray, offset board, offset filename
-
-			;Call ReadArray with required params to populate solvedBoard var
-			Invoke ReadArray, offset SolvedBoard, offset SolvedFilename
 			JMP ResetSuccessful
 
 			ResetLastGame:
 			;Call ReadArray with required params to populate board & solvedBoard var
 				INVOKE ReadArray, offset board, offset lastGameUnsolvedFile
-				INVOKE ReadArray, offset solvedBoard, offset lastGameSolvedFile
+				;INVOKE ReadArray, offset solvedBoard, offset lastGameSolvedFile
 
 
 			ResetSuccessful:
