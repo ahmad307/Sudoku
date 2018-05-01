@@ -591,6 +591,7 @@ GetDifficulty ENDP
 ;Updates cell's value at co-ordinate (x,y).					|
 ;Params: x, y, num (global variables).						|
 ;Updates:  Cell value at co-ordinate (x,y).					|
+;Return 1 in EAX if the cell was edited ,0 otherwise		|
 ;------------------------------------------------------------
 EditCell PROC, val1:Byte, val2:Byte, val3:Byte
 
@@ -629,9 +630,14 @@ EditCell PROC, val1:Byte, val2:Byte, val3:Byte
 		INC xCor
 		INC yCor
 		DEC remainingCellsCount
+		mov EAX,1
+		POP ECX
+		POP EDX
+		ret
 	Ending:
 		POP ECX
 		POP EDX
+		MOV EAX,0
 		ret
 EditCell ENDP
 
@@ -677,7 +683,7 @@ UpdateRemainingCellsCount PROC
 		MOV ECX, 81
 		L1:
 			MOV Al, [EDX]
-			CMP Al, '0'
+			CMP Al, 0
 			JNE skip
 				INC remainingCellsCount
 			skip:
@@ -793,7 +799,30 @@ WriteBoardToFile ENDP
 
 
 
+;-------------------Colorize Text-------------------------
+;Colorize given charachter with the given color				|
+;Param: EBX Number to be Colored.							|	
+;Param: EAX the given Color									|
+; Blue = 1 , Red = 4, Green = 2, White =15					|	
+;------------------------------------------------------------
+ColorizeText PROC
+
+	call SetTextColor ;eax contains color as param
+	
+	mov eax,ebx
+	call writedec
+
+	mov eax,15
+	call SetTextColor
+
+	ret
+ColorizeText ENDP
+
+
+
 main PROC
+
+	
 	
 	mWrite "*** Welcome to Sudoku Game built with Assembly ***"
 	CALL crlf
@@ -851,10 +880,25 @@ main PROC
 		;Print updated board
 		CALL clrscr
 		PrintUpdatedBoard:
-			mWrite "New Sudoko Board"
+		cmp EAX,1
+		jne WrongAnswer
+			mov eax,2 ;Set to Green Color
+			call SetTextColor
+			mWrite "Correct !"
+			mov eax,15 ;Set Color Back to white
+			call SetTextColor
 			CALL crlf
-			Invoke PrintArray, offset Board
+			jmp ShowOptions
+		WrongAnswer:
+				mov eax,4 ;Set to Red Color
+			call SetTextColor
+			mWrite "Wrong Input :( !"
+			mov eax,15 ;Set Color Back to white
+			call SetTextColor
+			CALL crlf
 
+			ShowOptions:
+			Invoke PrintArray, offset Board
 		mWrite "Press A to add a new cell"
 		CALL crlf
 		mWrite "Press C to reset the current board"
@@ -871,6 +915,14 @@ main PROC
 
 		;Saving current board if user choses exit
 		SaveBoard:
+			mWrite <"Time Taken: ">
+			call writedec
+			call crlf
+			mWrite "Number of Remaining cells: "
+			call UpdateRemainingCellsCount
+			movzx eax,remainingCellsCount
+			call writedec
+
 			Invoke WriteBoardToFile, offset board, offset lastgamefile
 
 			Invoke WriteBoardToFile, offset solvedBoard, offset lastGameSolvedFile
@@ -884,13 +936,6 @@ main PROC
 			Invoke GetTickCount
 			sub eax, starttime
 
-			mWrite <"Time Taken: ">
-			call writedec
-			call crlf
-			mWrite "Number of Remaining cells: "
-			call UpdateRemainingCellsCount
-			movzx eax,remainingCellsCount
-			call writedec
 			call crlf
 			exit
 
