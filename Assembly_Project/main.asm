@@ -337,10 +337,6 @@ GetBoards PROC, val1: Byte
 	;Calling ReadArray with required params to populate board var
 	Invoke ReadArray, offset board, offset filename
 
-	
-	mov edx,offset solvedBoard
-	call writestring
-	call crlf
 	;Calling ReadArray with required params to populate solvedBoard var
 	Invoke ReadArray, offset solvedBoard, offset solvedFileName
 
