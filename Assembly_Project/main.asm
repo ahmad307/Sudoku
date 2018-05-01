@@ -39,6 +39,9 @@ solvedFileName Byte "sudoku_boards/diff_?_?_solved.txt",0
 
 lastGameFile Byte "sudoku_boards/last_game/board.txt",0
 lastGameSolvedFile Byte "sudoku_boards/last_game/board_solved.txt",0
+lastGameUnsolvedFile Byte "sudoku_boards/last_game/board_unsolved.txt",0
+
+lastGameDetailsFile Byte "sudoku_boards/last_game/board_details.txt",0
 
 ;Variables for reading from file
 buffer Byte BUFFER_SIZE DUP(?)
@@ -60,8 +63,8 @@ beep byte 07h
 .code
 ;----------------------ReadArray-----------------------------
 ;Reads the array from the file.					     		|
-;param arrayOffset (ESI): offset of the array to be filled.		|
-;param fileNameOffset (EBX): offset of string file name.			|
+;param arrayOffset (ESI): offset of the array to be filled.	|
+;param fileNameOffset (EBX): offset of string file name.	|
 ;Returns: Array read from file in EDX.						|
 ;------------------------------------------------------------
 ReadArray PROC, arrayOffset:Dword, fileNameOffset:Dword
@@ -927,7 +930,7 @@ main PROC
 		;Saving current board if user choses exit
 		SaveBoard:
 			Invoke GetTickCount
-			sub eax, starttime
+			sub eax, startTime
 
 			mWrite <"Time Taken: ">
 			call writedec
@@ -937,54 +940,54 @@ main PROC
 			movzx eax,remainingCellsCount
 			call writedec
 
-			
-
+			;Saving boards in data files
 			INVOKE WriteBoardToFile, offset board, offset lastGameFile
-
 			INVOKE WriteBoardToFile, offset solvedBoard, offset lastGameSolvedFile
+
+			;Restoring unsolved board from data file
+			INVOKE ReadArray, offset board, offset fileName
+			INVOKE WriteBoardToFile, offset board, offset lastGameUnsolvedFile
 
 			CALL crlf
 			mWrite " ** Your Board was saved succssfully ! **"
 			CALL crlf
 			mWrite " ** Thanks for Playing **"
 			CALL crlf
-
 			call crlf
 			exit
 
 		;Rreset current board to initial state
 		ResetBoard:
 			CMP lastGameLoaded,1
-			JE CantReset
+			JE ResetLastGame
 
-			;calling ReadArray with required params to populate board var
-			MOV ESI,offset board
-			MOV EBX,offset fileName
-			;CALL ReadArray
+			;Call ReadArray with required params to populate board var
 			Invoke ReadArray, offset board, offset filename
 
-			;Calling ReadArray with required params to populate solvedBoard var
-			MOV ESI,offset solvedBoard
-			MOV EBX,offset solvedFileName
-			;CALL ReadArray
+			;Call ReadArray with required params to populate solvedBoard var
 			Invoke ReadArray, offset board, offset filename
+			JMP ResetSuccessful
 
-			CALL clrscr
-			mWrite "Your Game Was Reset!"
-			CALL crlf
-			JMP ShowBoard
+			ResetLastGame:
+			;Call ReadArray with required params to populate board & solvedBoard var
+				INVOKE ReadArray, offset board, offset lastGameUnsolvedFile
+				INVOKE ReadArray, offset solvedBoard, offset lastGameSolvedFile
 
-			CantReset:
-				mWrite "You can't reset a continued game"
+
+			ResetSuccessful:
+				CALL clrscr
+				mWrite "Your Game Was Reset!"
 				CALL crlf
-				JMP GamePlay
+				JMP ShowBoard
+
 
 		PrintSolvedBoard:
 			INVOKE PrintArray, offset solvedBoard
 
 			Invoke GetTickCount
-			sub eax, starttime
+			sub eax, startTime
 
+			CALL crlf
 			mWrite <"Time Taken: ">
 			call writedec
 			call crlf
