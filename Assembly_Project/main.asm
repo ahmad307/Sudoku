@@ -60,8 +60,8 @@ beep byte 07h
 .code
 ;----------------------ReadArray-----------------------------
 ;Reads the array from the file.					     		|
-;param arrayOffset: offset of the array to be filled.		|
-;param fileNameOffset: offset of string file name.			|
+;param arrayOffset (ESI): offset of the array to be filled.		|
+;param fileNameOffset (EBX): offset of string file name.			|
 ;Returns: Array read from file in EDX.						|
 ;------------------------------------------------------------
 ReadArray PROC, arrayOffset:Dword, fileNameOffset:Dword
@@ -145,9 +145,9 @@ ReadArray ENDP
 
 ;----------------------CheckIndex----------------------------
 ;Checks if index out of range / not reserved.				|
-;param val1: xCor.											|
-;param val2: yCor.											|
-;param val3: cell value.									|
+;param val1: xCor.			   -------------				|
+;param val2: yCor.		       |Global Vars|				|
+;param val3: cell value.	   -------------				|
 ;Returns: 1 in EAX if coordinates and input are valid,		|
 ;	or 0 otherwise.											|
 ;------------------------------------------------------------
@@ -196,7 +196,7 @@ CheckIndex ENDP
 
 ;----------------------GetValue------------------------------
 ;Returns the value in the given index						|
-;Param val1: pointer to the array.							|
+;Param val1 (EDX): pointer to the array.					|
 ;Param val2: xCor.											|
 ;Param val3: yCor.											|
 ;Return: given coordinates' value in EAX.					|
@@ -295,7 +295,7 @@ CheckAnswer ENDP
 ;Fills board,solvedBoards variables with data read from	   |
 ;	file depending on given difficulty and a generated	   |
 ;	random number.										   |	
-;Param val1:   Difficulty								   |
+;Param val1:   Difficulty	(Gloval Var)							   |
 ;Returns: Desired board in board variable				   |
 ;-----------------------------------------------------------
 GetBoards PROC, val1: Byte
@@ -352,7 +352,7 @@ GetBoards ENDP
 
 ;----------------------PrintArray----------------------------
 ;Prints the array to the console screen.					|
-;Param val1: offset of array.								|
+;Param val1 (EDX): offset of array.								|
 ;------------------------------------------------------------
 PrintArray PROC, val1:Dword
 
@@ -380,7 +380,7 @@ PrintArray PROC, val1:Dword
 		inc eax
 	loop topNumbers
 	
-	PUSH EDX	;will be popped after finishing the function 
+	PUSH EDX ;will be popped after finishing the function 
 	MOV ECX,81
 	l1:
 		MOV EAX,0
@@ -396,21 +396,22 @@ PrintArray PROC, val1:Dword
 		CMP dx,0
 		JNE NoEndl	  ;if dx % 9 = 0 print endl
 		CALL crlf
-		mov al,' '	;leave it alone
+		mov al,' ' ;leave it alone
 		call writechar
 		call writechar
 		call writechar
 
 
-		mov al,'|'	;leave it alone
+		mov al,'|' ;leave it alone
 		call writechar
 		
+
 
 		push ecx
 		mov edi,ecx
 		mov ecx,9
 		dashes:
-			mov al,196		;horizontal line
+			mov al,196 ;horizontal line
 			cmp edi,81
 			jne process
 			push ecx
@@ -430,7 +431,7 @@ PrintArray PROC, val1:Dword
 			cmp edi,0
 
 
-			mov al,' '	;leave it
+			mov al,' ';leave it
 			print:
 			call writechar
 			cmp ecx,1
@@ -439,7 +440,7 @@ PrintArray PROC, val1:Dword
 			Nobar:
 			cmp ecx,1
 			jne yarab
-			mov al,' '	;leave
+			mov al,' ';leave
 			yarab:
 			call writechar
 			cmp ecx,7
@@ -615,7 +616,7 @@ EditCell PROC, val1:Byte, val2:Byte, val3:Byte
 
 	PUSH EDX
 	PUSH ECX
-	Invoke CheckIndex, xCor, yCor, num
+	;Invoke CheckIndex, xCor, yCor, num  |Already done in TakeInput
 	CMP EAX, 0
 	JE Ending
 		Invoke CheckAnswer, xCor, yCor, num
@@ -726,8 +727,8 @@ LoadLastGame ENDP
 
 ;-------------------WriteBoardToFile-------------------------
 ;Writes given array to file with given string as name.		|
-;Param val1: offset of array to write to file.				|	
-;Param val2: offset of file name string.					|
+;Param val1 (EDX): offset of array to write to file.		|	
+;Param val2 (EBX): offset of file name string.				|
 ;------------------------------------------------------------
 WriteBoardToFile PROC, val1:Dword, val2:Dword
 
@@ -847,7 +848,7 @@ main PROC
 	;Loading last game boards from file
 	RunLastGame:
 		CALL LoadLastGame
-		JMP PrintBoard
+		JMP showBoard
 
 	StartGame:
 	;Fetch Sudoku Boards from files depending on chosen difficulty
@@ -855,24 +856,20 @@ main PROC
 	INVOKE GetBoards, difficulty
 
 	;start timer
-	INVOKE GetTickCount
-	MOV StartTime, eax
+	Invoke GetTickCount
+	mov StartTime, eax
 
-	PrintBoard:
-	;Print Sudoku board
-	INVOKE PrintArray, offset Board
-	
-	;Put number of empty cells in the board in remainingCellsCount var
-	CALL UpdateRemainingCellsCount
-	MOVZX EAX, remainingCellsCount
-
+	jmp showBoard
 
 	GamePlay:
 		;Prompt user for input
 		CALL TakeInput
-		CALL IsEditable
+		
 		
 		INVOKE EditCell, xCor, yCor, num
+
+		;updates count of cremaining cells 
+		call updateRemainingCellsCount
 
 		;Finish game if no empty cells remaining
 		CMP remainingCellsCount, 0
@@ -927,13 +924,18 @@ main PROC
 
 		;Saving current board if user choses exit
 		SaveBoard:
+			Invoke GetTickCount
+			sub eax, starttime
+
 			mWrite <"Time Taken: ">
-			CALL writedec
-			CALL crlf
+			call writedec
+			call crlf
 			mWrite "Number of Remaining cells: "
-			CALL UpdateRemainingCellsCount
-			MOVZX eax,remainingCellsCount
-			CALL writedec
+			call UpdateRemainingCellsCount
+			movzx eax,remainingCellsCount
+			call writedec
+
+			
 
 			INVOKE WriteBoardToFile, offset board, offset lastGameFile
 
@@ -945,10 +947,7 @@ main PROC
 			mWrite " ** Thanks for Playing **"
 			CALL crlf
 
-			INVOKE GetTickCount
-			SUB EAX, startTime
-
-			CALL crlf
+			call crlf
 			exit
 
 		;Rreset current board to initial state
@@ -980,7 +979,26 @@ main PROC
 
 		PrintSolvedBoard:
 			INVOKE PrintArray, offset solvedBoard
-			JMP ShowOptions
+
+			Invoke GetTickCount
+			sub eax, starttime
+
+			mWrite <"Time Taken: ">
+			call writedec
+			call crlf
+			mWrite "Number of Remaining cells: "
+			call UpdateRemainingCellsCount
+			movzx eax,remainingCellsCount
+			call writedec
+			call crlf
+			call crlf
+
+			mWrite " ** Thanks for Playing **"
+			CALL crlf
+
+			exit
+
+
 
 	Finish:
 		CALL clrscr
