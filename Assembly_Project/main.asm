@@ -26,8 +26,8 @@ num Byte 1
 difficulty Byte ?	;1 Easy, 2 Medium, 3 Hard
 
 ;Game stats counters
-wrongCounter Byte ?
-correctCounter Byte ?
+wrongCounter Dword 0
+correctCounter Dword 0
 remainingCellsCount Byte ?
 
 ;Bool indicating if current game is continuation of last game
@@ -1086,6 +1086,7 @@ main PROC
 			MOV eax,2    ;Set to Green Color
 			CALL SetTextColor
 			mWrite "Correct !"
+			inc correctCounter
 			MOV eax,15    ;Set Color Back to white
 			CALL SetTextColor
 			CALL crlf
@@ -1094,6 +1095,7 @@ main PROC
 				MOV eax,4    ;Set to Red Color
 			CALL SetTextColor
 			mWrite "Wrong Input :( !"
+			inc WrongCounter
 			MOV eax,15    ;Set Color Back to white
 			CALL SetTextColor
 			CALL crlf
@@ -1195,7 +1197,14 @@ main PROC
 			call writedec
 			call crlf
 			call crlf
-
+			mWrite "Number of Incorrect Solutions: "
+			mov eax,wrongCounter
+			call writedec
+			call crlf
+			mWrite "Number of Correct Solutions: "
+			mov eax,correctCounter
+			call writedec
+			call crlf
 			mWrite " ** Thanks for Playing **"
 			CALL crlf
 
@@ -1207,11 +1216,18 @@ main PROC
 		CALL clrscr
 		mWrite "Congratulations You have Finished the board !"
 		CALL crlf
-
 		Invoke GetTickCount
 			sub eax, startTime
 
 			mWrite <"Time Taken: ">
+			call writedec
+			call crlf
+			mWrite "Number of Incorrect Solutions: "
+			mov eax,wrongCounter
+			call writedec
+			call crlf
+			mWrite "Number of Correct Solutions: "
+			mov eax,correctCounter
 			call writedec
 			call crlf
 
