@@ -298,7 +298,7 @@ CheckAnswer ENDP
 ;Fills board,solvedBoards variables with data read from	   |
 ;	file depending on given difficulty and a generated	   |
 ;	random number.										   |	
-;Param val1:   Difficulty	(Gloval Var)							   |
+;Param val1:   Difficulty	(Gloval Var)				   |
 ;Returns: Desired board in board variable				   |
 ;-----------------------------------------------------------
 GetBoards PROC, val1: Byte
@@ -355,7 +355,7 @@ GetBoards ENDP
 
 ;----------------------PrintArray----------------------------
 ;Prints the array to the console screen.					|
-;Param val1 (EDX): offset of array.								|
+;Param val1 (EDX): offset of array.							|
 ;------------------------------------------------------------
 PrintArray PROC, val1:Dword
 
@@ -942,10 +942,15 @@ main PROC
 			INVOKE WriteBoardToFile, offset board, offset lastGameFile
 			INVOKE WriteBoardToFile, offset solvedBoard, offset lastGameSolvedFile
 
+			;Prevent calling dummy file if the game is a continued game
+			CMP lastGameLoaded, 1
+			JE SkipLoading
+
 			;Restoring unsolved board from data file
 			INVOKE ReadArray, offset board, offset fileName
 			INVOKE WriteBoardToFile, offset board, offset lastGameUnsolvedFile
 
+			SkipLoading:
 			CALL crlf
 			mWrite " ** Your Board was saved succssfully ! **"
 			CALL crlf
@@ -963,13 +968,13 @@ main PROC
 			Invoke ReadArray, offset board, offset filename
 
 			;Call ReadArray with required params to populate solvedBoard var
-			Invoke ReadArray, offset board, offset filename
+			;Invoke ReadArray, offset board, offset filename
 			JMP ResetSuccessful
 
 			ResetLastGame:
 			;Call ReadArray with required params to populate board & solvedBoard var
 				INVOKE ReadArray, offset board, offset lastGameUnsolvedFile
-				INVOKE ReadArray, offset solvedBoard, offset lastGameSolvedFile
+				;INVOKE ReadArray, offset solvedBoard, offset lastGameSolvedFile
 
 
 			ResetSuccessful:
