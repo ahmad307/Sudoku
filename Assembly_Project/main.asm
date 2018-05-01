@@ -610,7 +610,7 @@ EditCell PROC, val1:Byte, val2:Byte, val3:Byte
 
 	PUSH EDX
 	PUSH ECX
-	Invoke CheckIndex, xCor, yCor, num
+	;Invoke CheckIndex, xCor, yCor, num Already done in TakeInput
 	CMP EAX, 0
 	JE Ending
 		Invoke CheckAnswer, xCor, yCor, num
@@ -842,7 +842,7 @@ main PROC
 	;Loading last game boards from file
 	RunLastGame:
 		CALL LoadLastGame
-		JMP PrintBoard
+		JMP showBoardAndOptions
 
 	StartGame:
 	;Fetch Sudoku Boards from files depending on chosen difficulty
@@ -853,25 +853,17 @@ main PROC
 	Invoke GetTickCount
 	mov StartTime, eax
 
-	;start timer
-	Invoke GetTickCount
-	mov StartTime, eax
-
-	PrintBoard:
-	;Print Sudoku board
-	Invoke PrintArray, offset Board
-	
-	;Put number of empty cells in the board in remainingCellsCount var
-	CALL UpdateRemainingCellsCount
-	MOVzx EAX, remainingCellsCount
-
+	jmp showBoardAndOptions
 
 	GamePlay:
 		;Prompt user for input
 		CALL TakeInput
-		CALL IsEditable
+		
 		
 		Invoke EditCell, xCor, yCor, num
+
+		;updates count of cremaining cells 
+		call updateRemainingCellsCount
 
 		;Finish game if no empty cells remaining
 		CMP remainingCellsCount, 0
@@ -879,7 +871,7 @@ main PROC
 
 		;Print updated board
 		CALL clrscr
-		PrintUpdatedBoard:
+		
 		cmp EAX,1
 		jne WrongAnswer
 			mov eax,2 ;Set to Green Color
@@ -890,7 +882,7 @@ main PROC
 			CALL crlf
 			jmp ShowBoardAndOptions
 		WrongAnswer:
-				mov eax,4 ;Set to Red Color
+			mov eax,4 ;Set to Red Color
 			call SetTextColor
 			mWrite "Wrong Input :( !"
 			mov eax,15 ;Set Color Back to white
@@ -898,6 +890,7 @@ main PROC
 			CALL crlf
 
 			ShowBoardAndOptions:
+		;	call UpdateRemainingCellsCount
 			Invoke PrintArray, offset Board
 		mWrite "Press A to add a new cell"
 		CALL crlf
@@ -915,6 +908,9 @@ main PROC
 
 		;Saving current board if user choses exit
 		SaveBoard:
+			Invoke GetTickCount
+			sub eax, starttime
+
 			mWrite <"Time Taken: ">
 			call writedec
 			call crlf
@@ -932,9 +928,6 @@ main PROC
 			CALL crlf
 			mwrite " ** Thanks for Playing **"
 			CALL crlf
-
-			Invoke GetTickCount
-			sub eax, starttime
 
 			call crlf
 			exit
