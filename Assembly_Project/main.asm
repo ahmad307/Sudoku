@@ -10,9 +10,14 @@ BUFFER_SIZE=5000
 
 .data
 
+beep byte 07h
 
 ;Sudoko board
 board Byte 81 DUP(?)    
+
+helpCounter DWORD ?
+helpcounter2 Byte ?
+
 
 ;Solved Sudoku board
 solvedBoard Byte 81 DUP(?)	
@@ -25,7 +30,7 @@ yCor Byte ?
 num Byte ?   
 starttime Dword ?
 
-startTime Dword ?
+
 
 wrongCounter Byte ?
 correctCounter Byte ?
@@ -268,8 +273,10 @@ CheckAnswer PROC, val1:Byte, val2:Byte, val3:Byte
 	ret
 
 	WRONG:
+	mov al,beep
+	call writechar
 	MOV EAX,0
-
+	
 	ret
 CheckAnswer ENDP
 
@@ -344,8 +351,30 @@ GetBoards ENDP
 ;------------------------------------------------------------
 PrintArray PROC, val1:Dword
 
+	mov helpCounter,1
+	mov helpCounter2,1
 	mov edx, val1
 
+	call crlf
+	mov al,' '
+	call writechar
+	call writechar
+	call writechar
+	call writechar
+	mov eax,1
+	mov ecx,9
+
+	topNumbers:	
+		call writedec
+		push eax
+		mov al,' '
+		call writechar
+		call writechar
+		
+		pop eax
+		inc eax
+	loop topNumbers
+	
 	PUSH EDX ;will be popped after finishing the function 
 	MOV ECX,81
 	l1:
@@ -362,16 +391,117 @@ PrintArray PROC, val1:Dword
 		CMP dx,0
 		JNE NoEndl	  ;if dx % 9 = 0 print endl
 		CALL crlf
+		mov al,' ' ;leave it alone
+		call writechar
+		call writechar
+		call writechar
+
+
+		mov al,'|' ;leave it alone
+		call writechar
+		
+
+
+		push ecx
+		mov edi,ecx
+		mov ecx,9
+		dashes:
+			mov al,196 ;horizontal line
+			cmp edi,81
+			jne process
+			push ecx
+			mov ecx,3
+			mov al,196
+			horiDashes:
+			call writechar
+			loop horiDashes
+			pop ecx
+			jmp endloop
+
+			process:
+			cmp edi,54
+			je print
+			cmp edi,27
+			je print
+			cmp edi,0
+
+
+			mov al,' ';leave it
+			print:
+			call writechar
+			cmp ecx,1
+			jne noBar
+			mov al,196
+			Nobar:
+			cmp ecx,1
+			jne yarab
+			mov al,' ';leave
+			yarab:
+			call writechar
+			cmp ecx,7
+			je draw
+			cmp ecx,1
+			je draw
+			cmp ecx,4
+			jne skip
+			draw:
+			mov al,'|'
+			skip:
+			call writechar
+			endloop:
+		loop dashes
+		pop ecx
+	
+		call crlf
+		mov al,' '
+	call writechar
+		mov al,helpCounter2
+		call writedec
+		mov al,' '
+	call writechar
+		inc helpcounter2
+		mov al,'|'
+		call writechar
 
 		NoEndl:
 		POP EDX
 		POP EAX
-
+		
 		CALL writeDec
+		mov al,' '
+		call writechar
+		
+		mov al, ' '
+		cmp helpCounter,3
+		jne print2
+		mov al,'|'
+		mov helpCounter,0
+		print2:
+		call writechar
 		INC EDX
-	loop l1
+		inc helpCounter
+		
+		dec cx
+		jne l1  ;because of loop causes too far error
+
 
 	CALL crlf
+	mov al,' '
+	call writechar
+	call writechar
+	call writechar
+
+	
+	mov ecx,27
+	mov al,196
+	BottomDashes:
+	call writechar
+	loop BottomDashes
+	mov al,'|'
+	call writechar
+	call crlf
+	mov al,' '
+	call writechar
 	POP EDX
 	ret
 PrintArray ENDP
@@ -461,6 +591,7 @@ GetDifficulty ENDP
 ;Updates cell's value at co-ordinate (x,y).					|
 ;Params: x, y, num (global variables).						|
 ;Updates:  Cell value at co-ordinate (x,y).					|
+;Return 1 in EAX if the cell was edited ,0 otherwise		|
 ;------------------------------------------------------------
 EditCell PROC, val1:Byte, val2:Byte, val3:Byte
 
@@ -499,9 +630,14 @@ EditCell PROC, val1:Byte, val2:Byte, val3:Byte
 		INC xCor
 		INC yCor
 		DEC remainingCellsCount
+		mov EAX,1
+		POP ECX
+		POP EDX
+		ret
 	Ending:
 		POP ECX
 		POP EDX
+		MOV EAX,0
 		ret
 EditCell ENDP
 
@@ -569,7 +705,7 @@ LoadLastGame PROC
 
 	MOV ESI,offset solvedBoard
 	MOV EBX,offset lastGameSolvedFile
-	Invoke ReadArray, offset solvedBoard, offset lastGameFile
+	Invoke ReadArray, offset solvedBoard, offset lastGameSolvedFile
 
 	MOV lastGameLoaded,1
 
@@ -663,7 +799,30 @@ WriteBoardToFile ENDP
 
 
 
+;-------------------Colorize Text-------------------------
+;Colorize given charachter with the given color				|
+;Param: EBX Number to be Colored.							|	
+;Param: EAX the given Color									|
+; Blue = 1 , Red = 4, Green = 2, White =15					|	
+;------------------------------------------------------------
+ColorizeText PROC
+
+	call SetTextColor ;eax contains color as param
+	
+	mov eax,ebx
+	call writedec
+
+	mov eax,15
+	call SetTextColor
+
+	ret
+ColorizeText ENDP
+
+
+
 main PROC
+
+	
 	
 	mWrite "*** Welcome to Sudoku Game built with Assembly ***"
 	CALL crlf
@@ -721,10 +880,25 @@ main PROC
 		;Print updated board
 		CALL clrscr
 		PrintUpdatedBoard:
-			mWrite "New Sudoko Board"
+		cmp EAX,1
+		jne WrongAnswer
+			mov eax,2 ;Set to Green Color
+			call SetTextColor
+			mWrite "Correct !"
+			mov eax,15 ;Set Color Back to white
+			call SetTextColor
 			CALL crlf
-			Invoke PrintArray, offset Board
+			jmp ShowBoardAndOptions
+		WrongAnswer:
+				mov eax,4 ;Set to Red Color
+			call SetTextColor
+			mWrite "Wrong Input :( !"
+			mov eax,15 ;Set Color Back to white
+			call SetTextColor
+			CALL crlf
 
+			ShowBoardAndOptions:
+			Invoke PrintArray, offset Board
 		mWrite "Press A to add a new cell"
 		CALL crlf
 		mWrite "Press C to reset the current board"
@@ -741,6 +915,14 @@ main PROC
 
 		;Saving current board if user choses exit
 		SaveBoard:
+			mWrite <"Time Taken: ">
+			call writedec
+			call crlf
+			mWrite "Number of Remaining cells: "
+			call UpdateRemainingCellsCount
+			movzx eax,remainingCellsCount
+			call writedec
+
 			Invoke WriteBoardToFile, offset board, offset lastgamefile
 
 			Invoke WriteBoardToFile, offset solvedBoard, offset lastGameSolvedFile
@@ -754,10 +936,7 @@ main PROC
 			Invoke GetTickCount
 			sub eax, starttime
 
-			mWrite <"Time Taken: ">
-			call writedec
 			call crlf
-
 			exit
 
 		;Rreset current board to initial state
@@ -780,7 +959,7 @@ main PROC
 			CALL clrscr
 			mWrite "Your Game Was Reset!"
 			CALL crlf
-			JMP PrintUpdatedBoard
+			JMP ShowBoardAndOptions
 
 			CantReset:
 				mWrite "You can't reset a continued game"
