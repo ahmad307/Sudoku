@@ -16,6 +16,9 @@ board Byte 81 DUP(?)
 ;Solved Sudoku board
 solvedBoard Byte 81 DUP(?)	
 
+;Unsolved Board
+unSolvedBoard Byte 81 DUP(?)	
+
 ;X coordinate
 xCor Byte ?		
 ;Y coordinate
@@ -348,6 +351,9 @@ GetBoards PROC, val1: Byte
 	;Calling ReadArray with required params to populate board var
 	Invoke ReadArray, offset board, offset filename
 
+	;Calling ReadArray with required params to populate unSolved var
+	Invoke ReadArray, offset unSolvedBoard, offset filename
+
 	;Calling ReadArray with required params to populate solvedBoard var
 	Invoke ReadArray, offset solvedBoard, offset solvedFileName
 
@@ -361,6 +367,9 @@ GetBoards ENDP
 ;Param val1 (EDX): offset of array.							|
 ;------------------------------------------------------------
 PrintArray PROC, val1:Dword
+
+	mov xCor,0
+	mov yCor,1
 
 	mov helpCounter,1
 	mov helpCounter2,1
@@ -401,6 +410,8 @@ PrintArray PROC, val1:Dword
 
 		CMP dx,0
 		JNE NoEndl	  ;if dx % 9 = 0 print endl
+		inc xCor
+		mov yCor,1
 		CALL crlf
 		mov al,' ' ;leave it alone
 		call writechar
@@ -477,8 +488,22 @@ PrintArray PROC, val1:Dword
 		NoEndl:
 		POP EDX
 		POP EAX
+		push eax
 		
+		cmp eax,0
+		je NoRed ;dont Color 0s with red
+		Invoke GetValue, offset unsolvedBoard,xCor,yCor
+		cmp eax,0
+		jne NoRed
+
+		mov eax,4 ;red color
+		call SetTextColor
+		NoRed:
+		pop eax
 		CALL writeDec
+		mov eax,15
+		call SetTextColor
+		inc yCor
 		mov al,' '
 		call writechar
 		
@@ -520,7 +545,7 @@ PrintArray ENDP
 
 
 
-;----------------------PrintArray----------------------------
+;----------------------PrintSolvedArray----------------------------
 ;Prints the solved array to the console screen.				|
 ;Param val1 (EDX): offset of array.							|
 ;------------------------------------------------------------
@@ -904,6 +929,9 @@ LoadLastGame PROC
 	MOV EBX,offset lastGameSolvedFile
 	Invoke ReadArray, offset solvedBoard, offset lastGameSolvedFile
 
+	Invoke ReadArray, offset unSolvedBoard, offset lastGameUnSolvedFile
+
+
 	MOV lastGameLoaded,1
 
 	ret
@@ -1036,10 +1064,14 @@ main PROC
 
 	;Loading last game boards from file
 	RunLastGame:
+	;start timer
+	Invoke GetTickCount
+	mov StartTime, eax
 		CALL LoadLastGame
 		JMP showBoard
 
 	StartGame:
+
 	;Fetch Sudoku Boards from files depending on chosen difficulty
 	CALL GetDifficulty
 	INVOKE GetBoards, difficulty
