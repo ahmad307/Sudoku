@@ -3,11 +3,6 @@ INCLUDE Irvine32.INC
 INCLUDE macros.INC
 BUFFER_SIZE=5000
 
-;islam : getValue,editCell
-;ahmad : getBoards,checkIndex,checkAnswer,IsEditable,LoadLastGame
-;Hadil : readArray,takeInput
-;Raamyy: getDifficulty,printArr,WriteBoard
-
 .data
 
 ;Sudoko board
@@ -19,10 +14,10 @@ solvedBoard Byte 81 DUP(?)
 ;Unsolved Board
 unSolvedBoard Byte 81 DUP(?)	
 
-;X coordinate
+;X and Y coordinates
 xCor Byte ?		
-;Y coordinate
 yCor Byte ?     
+
 ;User input value for chosen cell
 num Byte 1   
 
@@ -65,7 +60,7 @@ beep byte 07h
 
 .code
 ;----------------------ReadArray-----------------------------
-;Reads the array from the file.					     		|
+;Reads the array from the file.                             |
 ;param arrayOffset (ESI): offset of the array to be filled.	|
 ;param fileNameOffset (EBX): offset of string file name.	|
 ;Returns: Array read from file in EDX.						|
@@ -151,9 +146,9 @@ ReadArray ENDP
 
 ;----------------------CheckIndex----------------------------
 ;Checks if index out of range.								|
-;param val1: xCor.			   -------------				|
+;param val1: xCor.             -------------                |
 ;param val2: yCor.		       |Global Vars|				|
-;param val3: cell value.	   -------------				|
+;param val3: cell value.       -------------                |
 ;Returns: 1 in EAX if coordinates and input are valid,		|
 ;	or 0 otherwise.											|
 ;------------------------------------------------------------
@@ -525,13 +520,11 @@ PrintArray PROC, val1:Dword
 		dec cx
 		JNE l1  ;because of loop causes too far error
 
-
 	CALL crlf
 	MOV AL,' '
 	CALL writechar
 	CALL writechar
 	CALL writechar
-
 	
 	MOV ECX,27
 	MOV AL,196
